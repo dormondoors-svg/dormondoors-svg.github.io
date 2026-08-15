@@ -1106,7 +1106,9 @@ function repOyHTML(){
     <button class="btn secondary" onclick="exportCSV('oy')">📊 Excel (CSV)</button>
     <button class="btn gold" onclick="makePDF()">📄 PDF hisobot</button>
   </div>
-  <p class="note">CSV faylni Excel'da ochsangiz — jadval tayyor. PDF — chop etish va ulashish uchun.</p>`;
+  <p class="note">CSV faylni Excel'da ochsangiz — jadval tayyor. PDF — chop etish va ulashish uchun.</p>
+  <div class="btn-row"><button class="btn" onclick="claudeShare()">🤖 Claude tahlili — hisobotni yuborish</button></div>
+  <p class="note">Bir bosishda oy hisoboti matn bo'lib chiqadi — Claude ilovasiga tashlang, tahlil va tavsiya oladi.</p>`;
   return html;
 }
 function unitPrices(list){
@@ -1259,6 +1261,43 @@ function repQarzHTML(){
   }).join('')}
   <p class="note" style="margin-top:8px">Qarz to'langanda — yozuvni bosing va «To'landi» ni tanlang.</p></div>`;
   return html;
+}
+
+/* ==================== CLAUDE TAHLILI ==================== */
+function claudeReportText(){
+  const K=kassaCalc();
+  const all=monthItems(curMonth.y,curMonth.m);
+  const tot=sum(all), biz=sum(all.filter(i=>i.kind==='biznes')), per=tot-biz;
+  let n=0,k=0,du=0,q=0;
+  all.forEach(i=>{const a=Number(i.amount)||0;
+    if(i.cur==='USD') du+=(Number(i.usd)||0);
+    else if(i.pay==='Karta (plastik)'||i.pay==="O'tkazma (bank)") k+=a;
+    else if(i.pay==='Qarzga olindi') q+=a; else n+=a;});
+  const byCat={}; all.forEach(i=>{byCat[i.cat]=(byCat[i.cat]||0)+(Number(i.amount)||0);});
+  const top=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]).slice(0,5)
+    .map((c,ix)=>(ix+1)+') '+c+' — '+fmt(byCat[c])).join('; ');
+  const dbt=debtItems(); const dbtSum=sum(dbt);
+  const mk=curMonth.y+'-'+String(curMonth.m).padStart(2,'0');
+  const mI=K.inn.filter(x=>String(x.date).startsWith(mk));
+  const iN=mI.filter(x=>x.cur!=='USD'&&!(x.method==='Karta'||x.method==="O'tkazma")).reduce((a,x)=>a+x.sum,0);
+  const iK=mI.filter(x=>x.cur!=='USD'&&(x.method==='Karta'||x.method==="O'tkazma")).reduce((a,x)=>a+x.sum,0);
+  const iD=mI.filter(x=>x.cur==='USD').reduce((a,x)=>a+x.usd,0);
+  return '📊 DORMON FINANS — '+OYLAR[curMonth.m-1]+' '+curMonth.y+' hisoboti\n'
+   +"Kassa hozir: so'm "+fmt(K.uzs)+', dollar $'+fmtUsd(K.usd)+', karta '+fmt(K.karta)+(K.ok?'':" (DIQQAT: zakaz ma'lumoti o'qilmadi)")+'\n'
+   +'Oy chiqimi: jami '+fmt(tot)+" so'm (biznes "+fmt(biz)+', shaxsiy '+fmt(per)+')\n'
+   +'Usul: naqd '+fmt(n)+', karta '+fmt(k)+', dollar $'+fmtUsd(du)+', qarzga olindi '+fmt(q)+'\n'
+   +'Oy kirimi (zakazlardan): naqd '+fmt(iN)+', karta '+fmt(iK)+', dollar $'+fmtUsd(iD)+'\n'
+   +'Top xarajatlar: '+(top||"yo'q")+'\n'
+   +"To'lanmagan qarzlar: "+fmt(dbtSum)+" so'm ("+dbt.length+' ta)\n'
+   +'Dollar kursi: '+(KURS.rate?('1$='+fmt(KURS.rate)+" so'm ("+fmtDate(KURS.date)+')'):'kiritilmagan')+'\n\n'
+   +"Iltimos: shu oy bo'yicha qisqa tahlil, xavfli joylar va 3 ta amaliy tavsiya ber.";
+}
+async function claudeShare(){
+  const txt=claudeReportText();
+  try{ if(navigator.share){ await navigator.share({text:txt}); return; } }
+  catch(e){ if(e&&e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(txt); toast("Hisobot nusxalandi — Claude ilovasini ochib tashlang",'ok'); }
+  catch(e){ prompt('Nusxalang:', txt); }
 }
 
 /* ==================== EXPORT: CSV ==================== */

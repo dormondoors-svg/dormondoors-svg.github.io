@@ -861,7 +861,37 @@ function renderReport(){
       <span class="sum" style="color:var(--red)">${fmt(d.q)}</span>
     </div>`).join('');
   html+=`</div>`;
+  html+=`<div class="btn-row"><button class="btn" onclick="claudeShare()">🤖 Claude tahlili — holatni yuborish</button></div>
+  <p class="note">Bir bosishda zakazlar holati matn bo'lib chiqadi — Claude ilovasiga tashlang, tahlil va tavsiya oladi.</p>`;
   app.innerHTML=html;
+}
+function claudeReportText(){
+  const t=todayStr();
+  let act=0, late=0, dbt=0; const lateList=[];
+  S.orders.forEach(o=>{ if(o.status==='Bekor qilindi') return;
+    const c=calcOrder(o); if(c.qoldiq>0) dbt+=c.qoldiq;
+    if(!o.deliveredDate){ act++; if(o.deadline&&o.deadline<t){ late++; lateList.push('№'+o.id+' '+(o.client.name||'—')+' ('+Math.round((new Date(t)-new Date(o.deadline))/86400000)+' kun kechikdi)'); } }
+  });
+  const y=String(new Date().getFullYear());
+  let cnt=0,topsh=0,savdo=0,tush=0;
+  S.orders.forEach(o=>{
+    if(o.status!=='Bekor qilindi'&&o.date&&o.date.slice(0,4)===y){cnt++;savdo+=calcOrder(o).final;}
+    if(o.deliveredDate&&o.deliveredDate.slice(0,4)===y) topsh++;
+    (o.payments||[]).forEach(pm=>{ if(pm.date&&pm.date.slice(0,4)===y) tush+=Number(pm.sum)||0; });
+  });
+  return "📋 DORMON DOORS — zakazlar holati ("+fmtDate(t)+")\n"
+   +"Qo'lda (topshirilmagan): "+act+" ta, muddati o'tgan: "+late+" ta\n"
+   +(lateList.length?("Kechikkanlar: "+lateList.join('; ')+"\n"):"")
+   +"Mijozlardagi qarz: "+fmt(dbt)+" so'm\n"
+   +y+" yil: olindi "+cnt+" ta, topshirildi "+topsh+" ta, savdo "+fmt(savdo)+" so'm, tushum "+fmt(tush)+" so'm\n\n"
+   +"Iltimos: holatga qisqa tahlil, qaysi zakazlarga birinchi e'tibor berish kerak, 3 ta amaliy tavsiya.";
+}
+async function claudeShare(){
+  const txt=claudeReportText();
+  try{ if(navigator.share){ await navigator.share({text:txt}); return; } }
+  catch(e){ if(e&&e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(txt); toast("Hisobot nusxalandi — Claude ilovasiga tashlang"); }
+  catch(e){ prompt('Nusxalang:', txt); }
 }
 
 /* =================== SOZLAMALAR =================== */
