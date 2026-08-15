@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Dormon Doors — Xarajatlar</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Xarajatlar">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1F3864">
+<link rel="apple-touch-icon" href="icon-xarajat-180.png">
+<link rel="icon" href="icon-xarajat-180.png">
+<style>
+  :root{
+    --navy:#1F3864; --navy-dark:#152A4A; --gold:#BF9000;
+    --cream:#FBF9F4; --paper:#FFFFFF; --line:#E4DFD3;
+    --ink:#26241D; --muted:#8A8474; --yellow:#FFF6D8;
+    --red:#7A2E2E; --green:#2E6B34; --blue:#2A5B8A; --violet:#5A3E7A;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; font-family:'Georgia','Times New Roman',serif;
+    background:var(--cream); color:var(--ink);
+    padding-bottom:calc(78px + env(safe-area-inset-bottom));
+  }
+  header{
+    background:var(--navy); color:#fff;
+    padding:calc(14px + env(safe-area-inset-top)) 16px 12px;
+    position:sticky; top:0; z-index:10;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  header h1{ margin:0; font-size:17px; letter-spacing:.5px; font-weight:700; }
+  header p{ margin:2px 0 0; font-size:11px; color:#C9D3E4; font-family:Arial,sans-serif; font-style:italic; }
+  .wrap{ padding:14px 14px 20px; max-width:640px; margin:0 auto; }
+  .panel{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:14px; }
+  .panel h2{
+    font-size:12.5px; text-transform:uppercase; letter-spacing:1px; color:var(--navy);
+    margin:0 0 10px; font-family:Arial,sans-serif; font-weight:700;
+    border-bottom:2px solid var(--gold); padding-bottom:6px;
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+  }
+  label{ display:block; font-size:11px; font-family:Arial,sans-serif; color:var(--muted); margin-bottom:4px; }
+  input, select, textarea{
+    width:100%; padding:10px; border:1px solid #cfc8b4; border-radius:8px;
+    background:var(--yellow); font-size:16px; font-family:Arial,sans-serif; color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{ outline:2px solid var(--navy); outline-offset:1px; }
+  .fg{ margin-bottom:11px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .hint{ font-size:11.5px; font-family:Arial,sans-serif; color:var(--muted); margin:-6px 0 11px 2px; min-height:14px; }
+  .hint.big{ color:var(--navy); font-weight:700; font-size:13px; }
+  .btn{
+    padding:13px 10px; border-radius:10px; font-family:Arial,sans-serif; font-weight:700;
+    font-size:14px; cursor:pointer; border:1px solid var(--navy); background:var(--navy); color:#fff; width:100%;
+  }
+  .btn.secondary{ background:#fff; color:var(--navy); }
+  .btn.danger{ background:#fff; color:var(--red); border-color:var(--red); }
+  .btn.gold{ background:var(--gold); border-color:var(--gold); color:#fff; }
+  .btn:active{ opacity:.85; }
+  .btn-row{ display:flex; gap:8px; margin-bottom:12px; }
+  .btn-row .btn{ flex:1; }
+  .chipsrow{ display:flex; gap:6px; margin-bottom:11px; flex-wrap:wrap; }
+  .tchip{
+    background:#fff; border:1px solid var(--line); border-radius:20px; padding:7px 14px;
+    font-family:Arial,sans-serif; font-size:12.5px; cursor:pointer; color:var(--navy);
+  }
+  .tchip.on{ background:var(--navy); color:#fff; border-color:var(--navy); font-weight:700; }
+  .seg{ display:flex; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:11px; }
+  .seg button{
+    flex:1; padding:10px 4px; background:#fff; border:none; border-right:1px solid var(--line);
+    font-family:Arial,sans-serif; font-size:12.5px; color:var(--muted); cursor:pointer;
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button.on{ background:var(--navy); color:#fff; font-weight:700; }
+  .seg.small button{ padding:8px 3px; font-size:11.5px; }
+  /* chips (stat) */
+  .chips{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .chip{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 12px; flex:1; min-width:128px; }
+  .chip .cl{ font-size:10.5px; font-family:Arial,sans-serif; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+  .chip .cv{ font-size:17px; font-family:Arial,sans-serif; font-weight:700; color:var(--navy); margin-top:3px; }
+  .chip .cv.red{ color:var(--red); } .chip .cv.green{ color:var(--green); } .chip .cv.violet{ color:var(--violet); }
+  .total-box{ background:var(--navy); color:#fff; border-radius:10px; padding:15px; text-align:center; margin-bottom:12px; }
+  .total-box .label{ font-family:Arial,sans-serif; font-size:11px; color:#C9D3E4; text-transform:uppercase; letter-spacing:1px; }
+  .total-box .value{ font-size:25px; font-weight:700; color:var(--gold); font-family:Arial,sans-serif; margin-top:4px; }
+  .total-box .sub{ font-family:Arial,sans-serif; font-size:11.5px; color:#C9D3E4; margin-top:5px; }
+  /* month nav */
+  .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px; }
+  .month-nav button{
+    background:var(--paper); border:1px solid var(--line); color:var(--navy);
+    border-radius:8px; width:40px; height:40px; font-size:18px; font-weight:700; cursor:pointer; flex-shrink:0;
+  }
+  .month-nav .month-label{ font-family:Arial,sans-serif; font-weight:700; color:var(--navy); font-size:15px; flex:1; text-align:center; }
+  /* entries */
+  .day-group{ margin-bottom:14px; }
+  .day-label{
+    font-family:Arial,sans-serif; font-size:12px; font-weight:700; color:var(--navy);
+    letter-spacing:.3px; margin:0 0 6px 2px; display:flex; justify-content:space-between;
+  }
+  .day-label .dt{ color:var(--muted); font-weight:700; }
+  .entry{
+    display:flex; align-items:center; gap:8px;
+    background:var(--paper); border:1px solid var(--line); border-left:4px solid var(--gold);
+    border-radius:9px; padding:10px 12px; margin-bottom:6px; cursor:pointer;
+  }
+  .entry.personal{ border-left-color:var(--violet); }
+  .entry.debt{ border-left-color:var(--red); }
+  .entry:active{ background:var(--cream); }
+  .entry .info{ flex:1; min-width:0; }
+  .entry .cat{ font-weight:700; font-size:13.5px; color:var(--ink); font-family:Arial,sans-serif; }
+  .entry .sub{ font-size:12px; color:var(--navy); font-family:Arial,sans-serif; margin-top:2px; }
+  .entry .note{ font-size:11.5px; color:var(--muted); font-family:Arial,sans-serif; margin-top:2px; }
+  .entry .amt{ font-weight:700; color:var(--red); font-family:Arial,sans-serif; font-size:14.5px; white-space:nowrap; }
+  .tag{ display:inline-block; font-size:9.5px; font-family:Arial,sans-serif; font-weight:700; padding:2px 6px; border-radius:4px; color:#fff; margin-left:5px; vertical-align:middle; }
+  .tag.p{ background:var(--violet); } .tag.d{ background:var(--red); } .tag.k{ background:var(--blue); } .tag.o{ background:var(--teal,#1E6B62); }
+  /* summary rows */
+  .cat-row{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:9px 0; border-bottom:1px dashed var(--line); font-family:Arial,sans-serif; font-size:13.5px; cursor:pointer;
+  }
+  .cat-row:last-of-type{ border-bottom:none; }
+  .cat-row .amt{ font-weight:700; color:var(--navy); white-space:nowrap; }
+  .cat-row .pct{ font-size:11px; color:var(--muted); font-weight:400; margin-left:5px; }
+  .sub-row{ display:flex; justify-content:space-between; gap:8px; padding:5px 0 5px 16px; font-family:Arial,sans-serif; font-size:12.5px; color:var(--muted); cursor:pointer; }
+  .sub-row .r{ white-space:nowrap; }
+  .det-row{ display:flex; justify-content:space-between; gap:8px; padding:4px 0 4px 30px; font-family:Arial,sans-serif; font-size:11.5px; color:var(--muted); }
+  .bar{ height:5px; background:var(--line); border-radius:3px; overflow:hidden; margin-top:5px; }
+  .bar i{ display:block; height:100%; background:var(--gold); }
+  /* chart */
+  .chart{ display:flex; align-items:flex-end; gap:2px; height:90px; padding:6px 2px 0; border-bottom:1px solid var(--line); }
+  .chart .cb{ flex:1; background:var(--navy); border-radius:2px 2px 0 0; min-height:1px; position:relative; }
+  .chart .cb.today{ background:var(--gold); }
+  .chart-x{ display:flex; gap:2px; margin-top:3px; }
+  .chart-x span{ flex:1; text-align:center; font-family:Arial,sans-serif; font-size:8px; color:var(--muted); }
+  /* table */
+  .rep-table{ width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:12.5px; }
+  .rep-table th{ text-align:right; padding:7px 5px; border-bottom:2px solid var(--gold); color:var(--navy); font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; }
+  .rep-table th:first-child{ text-align:left; }
+  .rep-table td{ padding:7px 5px; border-bottom:1px dashed var(--line); text-align:right; white-space:nowrap; }
+  .rep-table td:first-child{ text-align:left; }
+  .rep-table tr.total td{ border-top:2px solid var(--gold); border-bottom:none; font-weight:700; color:var(--navy); }
+  .empty{ text-align:center; color:var(--muted); font-family:Arial,sans-serif; font-size:13px; padding:26px 10px; font-style:italic; line-height:1.6; }
+  .note{ font-size:11px; color:var(--muted); font-family:Arial,sans-serif; font-style:italic; line-height:1.55; padding:0 2px; }
+  .warn{ background:#FFF0E0; border:1px solid #E0B080; color:#7A4A1E; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:12.5px; margin-bottom:12px; }
+  /* bottom nav */
+  .bottom-nav{
+    position:fixed; bottom:0; left:0; right:0; z-index:20;
+    background:var(--navy); display:flex; padding-bottom:env(safe-area-inset-bottom);
+    box-shadow:0 -3px 10px rgba(0,0,0,.2);
+  }
+  .bottom-nav button{
+    flex:1; background:none; border:none; color:#9FB0CC; padding:10px 4px 12px;
+    font-family:Arial,sans-serif; font-size:11px; font-weight:700; cursor:pointer;
+  }
+  .bottom-nav button .ic{ display:block; font-size:20px; margin-bottom:2px; }
+  .bottom-nav button.active{ color:var(--gold); }
+  .toast{
+    position:fixed; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+    background:var(--navy-dark); color:#fff; padding:11px 18px; border-radius:8px;
+    font-family:Arial,sans-serif; font-size:13px; z-index:200; opacity:0; transition:opacity .3s;
+    pointer-events:none; max-width:88%; text-align:center;
+  }
+  .toast.show{ opacity:1; }
+  .toast.err{ background:#7A2E2E; }
+  .toast.ok{ background:#2E6B34; }
+  /* modal */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(20,18,14,.55); z-index:100;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-bg.show{ display:flex; }
+  .modal{
+    background:var(--cream); width:100%; max-width:640px; max-height:92vh; overflow-y:auto;
+    border-radius:14px 14px 0 0; padding:16px 14px calc(20px + env(safe-area-inset-bottom));
+  }
+  .modal h3{ font-family:Arial,sans-serif; font-size:14px; color:var(--navy); margin:0 0 12px; text-transform:uppercase; letter-spacing:.8px; border-bottom:2px solid var(--gold); padding-bottom:7px; }
+  .pdf-host{ position:fixed; left:-12000px; top:0; }
+  /* PDF sheet */
+  .sheet{ width:794px; background:#fff; color:#26241D; font-family:Arial,Helvetica,sans-serif; padding:0 0 26px; }
+  .sheet .shead{ background:#1F3864; color:#fff; padding:24px 40px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
+  .sheet .shead .brand{ font-size:25px; font-weight:800; letter-spacing:2px; }
+  .sheet .shead .brand span{ color:#E7B93C; }
+  .sheet .shead .tag2{ font-size:12px; color:#C9D3E4; font-style:italic; margin-top:4px; }
+  .sheet .shead .contact{ text-align:right; font-size:13px; line-height:1.7; color:#E8EDF5; white-space:nowrap; }
+  .sheet .shead .contact b{ color:#E7B93C; }
+  .sheet .gline{ height:5px; background:#BF9000; }
+  .sheet .sbody{ padding:22px 40px 0; }
+  .sheet h3{ font-size:13.5px; color:#1F3864; margin:20px 0 9px; text-transform:uppercase; letter-spacing:1px; border-bottom:2px solid #BF9000; padding-bottom:5px; }
+  .sheet h3:first-child{ margin-top:0; }
+  .sheet table.t{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .sheet table.t th{ background:#1F3864; color:#fff; padding:8px; font-size:11px; text-align:right; }
+  .sheet table.t th:first-child{ text-align:left; }
+  .sheet table.t td{ padding:7px 8px; border-bottom:1px solid #E4DFD3; text-align:right; }
+  .sheet table.t td:first-child{ text-align:left; }
+  .sheet table.t tr.tot td{ border-top:2px solid #BF9000; font-weight:700; color:#1F3864; }
+  .sheet table.t tr.sb td{ color:#6b675c; font-size:11.5px; }
+  .sheet .kpi{ display:flex; gap:12px; margin-bottom:6px; }
+  .sheet .kpi div{ flex:1; border:1px solid #E4DFD3; border-radius:8px; padding:10px 12px; }
+  .sheet .kpi .l{ font-size:10.5px; color:#8A8474; text-transform:uppercase; }
+  .sheet .kpi .v{ font-size:17px; font-weight:700; color:#1F3864; margin-top:3px; }
+  .sheet .sfoot{ margin-top:24px; padding:14px 40px 0; border-top:1px solid #E4DFD3; display:flex; justify-content:space-between; font-size:11.5px; color:#8A8474; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="hTitle">DORMON DOORS</h1>
+  <p id="hSub">Kunlik xarajatlar va hisobot</p>
+</header>
+
+<div class="wrap" id="app"></div>
+
+<nav class="bottom-nav">
+  <button id="nav_day" onclick="show('day')"><span class="ic">✍️</span>Kunlik</button>
+  <button id="nav_rep" onclick="show('rep')"><span class="ic">📊</span>Hisobot</button>
+  <button id="nav_set" onclick="show('set')"><span class="ic">⚙️</span>Sozlamalar</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this) closeModal()">
+  <div class="modal" id="modalBox"></div>
+</div>
+<div class="pdf-host" id="pdfHost"></div>
+
+<script>
+/* ==================== KONSTANTALAR ==================== */
+const KEY = 'dormon_xarajat_v2';
+const OLD_KEY = 'dormon_doris_expenses';
+const APP_VER = 'v2.0 — 14.08.2026';
+const DEFAULT_PHONE = '+998 91 488 70 47, +998 94 094 07 00';
+const OYLAR = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+const OY_QISQA = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
+
+/* kategoriya: nom, tur (biznes/shaxsiy), qism turi (material/furnitura/ishchi/yo'q) */
+const CATS = [
+  {n:'Material',                  k:'biznes',  s:'material'},
+  {n:'Furnitura',                 k:'biznes',  s:'furnitura'},
+  {n:'Ish haqi',                  k:'biznes',  s:'ishchi'},
+  {n:'Avans (ishchiga)',          k:'biznes',  s:'ishchi'},
+  {n:'Transport / yoqilgi',       k:'biznes',  s:''},
+  {n:'Dostavka / yetkazish',      k:'biznes',  s:''},
+  {n:'Kommunal (svet, gaz, suv)', k:'biznes',  s:''},
+  {n:'Ijara (arenda)',            k:'biznes',  s:''},
+  {n:'Asbob-uskuna',              k:'biznes',  s:''},
+  {n:"Ta'mirlash / ehtiyot qism", k:'biznes',  s:''},
+  {n:'Qadoqlash (upakovka)',      k:'biznes',  s:''},
+  {n:'Reklama / marketing',       k:'biznes',  s:''},
+  {n:"Soliq / rasmiy to'lov",     k:'biznes',  s:''},
+  {n:'Bank / karta xizmati',      k:'biznes',  s:''},
+  {n:'Mehmon / mehmondorchilik',  k:'biznes',  s:''},
+  {n:'Shaxsiy xarajat',           k:'shaxsiy', s:''},
+  {n:'Uy xarajati',               k:'shaxsiy', s:''},
+  {n:'Boshqa',                    k:'biznes',  s:'erkin'}
+];
+const MATERIALS = [
+  ['MDF','dona'],['HDF','dona'],['Reyka','metr'],["Brus / yog'och",'metr'],
+  ["Kraska — bo'yoq",'kg'],['Gruntovka','kg'],['Rastvoritel','kg'],['Otverditel','kg'],
+  ['Kley — yelim','kg'],["Jilvir — shlif qog'ozi",'metr'],["Plyonka / shpon",'metr'],
+  ["To'ldirgich (penopolistirol)",'dona'],['Montaj kopigi (pena)','dona'],['Germetik','dona'],
+  ['Skotch / lenta','dona'],['Shurup / mix','quti'],['Boshqa material','dona']
+];
+const FURNITURA = [
+  ['Petlya','dona'],['Dastak','dona'],['Qulf','dona'],['Shpingalet','dona'],
+  ['Magnit / rigel','dona'],['Boshqa furnitura','dona']
+];
+const WORKERS_DEF = [
+  "Sardor — bo'yoqchi","Otabek — usta","Xusanboy — usta-nopkachi",
+  "Ravshanbek — usta-nopkachi","Dilfuza — jilvirchi","Matluba — jilvirchi","Kunlik nayomnik"
+];
+const PAYS = ['Naqd','Karta (plastik)',"O'tkazma (bank)","Qarzga olindi"];
+
+const STORAGE_OK = (function(){ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }catch(e){ return false; } })();
+
+/* ==================== HOLAT ==================== */
+function defaultState(){
+  return {
+    seq: 0,
+    settings: {
+      phone: DEFAULT_PHONE,
+      workers: WORKERS_DEF.slice(),
+      extraCats: [],
+      gdUrl: '', gdToken: 'dormon2026', gdAuto: true, gdLast: '', gdLastOk: ''
+    },
+    items: []
+  };
+}
+function load(){
+  if(!STORAGE_OK) return null;
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw) return JSON.parse(raw);
+    /* eski (kunlik_xarajatlar.html) ma'lumotini ko'chirish */
+    const old = localStorage.getItem(OLD_KEY);
+    if(old){
+      const arr = JSON.parse(old) || [];
+      const st = defaultState();
+      arr.forEach(e=>{
+        st.seq++;
+        st.items.push({
+          id: st.seq, date: e.date, time: e.time || '00:00',
+          cat: e.cat || 'Boshqa', sub: e.sub || '', qty: e.qty || null, unit: e.unit || '',
+          amount: Number(e.amount) || 0, note: e.note || '',
+          kind: (e.cat==='Shaxsiy xarajat'||e.cat==='Uy xarajati') ? 'shaxsiy' : 'biznes',
+          pay: 'Naqd', paid: true, paidDate: '', supplier: '', order: ''
+        });
+      });
+      return st;
+    }
+    return null;
+  }catch(e){ return null; }
+}
+let S = load() || defaultState();
+/* migratsiya / himoya */
+if(!S.settings) S.settings = defaultState().settings;
+if(!Array.isArray(S.items)) S.items = [];
+if(!Array.isArray(S.settings.workers) || !S.settings.workers.length) S.settings.workers = WORKERS_DEF.slice();
+if(!Array.isArray(S.settings.extraCats)) S.settings.extraCats = [];
+if(!S.settings.gdToken) S.settings.gdToken = 'dormon2026';
+if(!S.seq) S.seq = S.items.reduce((m,i)=>Math.max(m, Number(i.id)||0), 0);
+S.items.forEach(i=>{
+  if(!i.kind) i.kind = 'biznes';
+  if(!i.pay) i.pay = 'Naqd';
+  if(i.paid === undefined) i.paid = (i.pay !== 'Qarzga olindi');
+});
+const NEEDS_FIRST_SAVE = STORAGE_OK && !localStorage.getItem(KEY);
+
+function save(){
+  if(!STORAGE_OK){ toast("Saqlanmadi! Safari orqali oching", 'err'); return; }
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ toast("Xotira to'lgan — zaxira oling", 'err'); }
+}
+
+/* ==================== YORDAMCHI ==================== */
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(n){ if(n==null||isNaN(n)) n=0; return Math.round(n).toLocaleString('ru-RU').replace(/[, ]/g,' '); }
+function fmtQty(n){ if(n==null||isNaN(n)) n=0; return (Math.round(n*1000)/1000).toLocaleString('ru-RU').replace(/[, ]/g,' '); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function shiftDay(iso, delta){
+  const p = iso.split('-').map(Number);
+  const d = new Date(p[0], p[1]-1, p[2]);
+  d.setDate(d.getDate()+delta);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function nowTime(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function dParts(iso){ const p=String(iso||'').split('-'); return {y:+p[0]||0, m:+p[1]||0, d:+p[2]||0}; }
+function fmtDate(iso){ const p=dParts(iso); return p.d ? (String(p.d).padStart(2,'0')+'.'+String(p.m).padStart(2,'0')+'.'+p.y) : '—'; }
+function dLabel(iso){ const p=dParts(iso); return p.d ? (p.d+' '+OYLAR[p.m-1]) : iso; }
+function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
+function catInfo(name){ return CATS.find(c=>c.n===name) || {n:name, k:'biznes', s:''}; }
+function toast(msg, cls){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(cls?' '+cls:'');
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.className='toast',2400);
+}
+function sid(prefix, s){ return prefix+'_'+String(s).replace(/[^a-zA-Z0-9]/g,'').slice(0,40)+'_'+String(s).length; }
+function parseAmount(str){ return Number(String(str||'').replace(/[^\d]/g,'')) || 0; }
+function fmtInput(str){ const n=parseAmount(str); return n ? n.toLocaleString('ru-RU').replace(/[, ]/g,' ') : ''; }
+
+/* ==================== NAVIGATSIYA ==================== */
+let view='day';
+let curMonth = (function(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()+1}; })();
+let repYear = new Date().getFullYear();
+let repMode = 'oy';      // oy | yil | qarz
+let filterKind = 'hammasi'; // hammasi | biznes | shaxsiy
+let searchQ = '';
+const openIds = {};      // ochilgan bo'limlar
+
+function show(v){
+  view=v;
+  ['day','rep','set'].forEach(n=>{
+    const b=document.getElementById('nav_'+n);
+    if(b) b.classList.toggle('active', v===n);
+  });
+  const hT=document.getElementById('hTitle'), hS=document.getElementById('hSub');
+  if(v==='day'){ hT.textContent='DORMON DOORS'; hS.textContent='Kunlik xarajatlar'; renderDay(); }
+  if(v==='rep'){ hT.textContent='HISOBOT'; hS.textContent='Oylik · yillik · qarzlar'; renderRep(); }
+  if(v==='set'){ hT.textContent='SOZLAMALAR'; hS.textContent='Zaxira, ishchilar, kategoriyalar'; renderSet(); }
+  window.scrollTo(0,0);
+}
+function toggleOpen(id){ openIds[id] = !openIds[id]; if(view==='rep') renderRep(); else renderDay(); }
+
+/* ==================== HISOB-KITOB ==================== */
+function monthItems(y,m){
+  const mk = y+'-'+String(m).padStart(2,'0');
+  return S.items.filter(i => String(i.date||'').startsWith(mk));
+}
+function applyKind(list){
+  if(filterKind==='hammasi') return list;
+  return list.filter(i=>i.kind===filterKind);
+}
+function sum(list){ return list.reduce((s,i)=>s+(Number(i.amount)||0), 0); }
+function debtItems(){ return S.items.filter(i=>i.pay==='Qarzga olindi' && !i.paid); }
+
+/* ==================== KUNLIK SAHIFA ==================== */
+function renderDay(){
+  const app=document.getElementById('app');
+  const all = monthItems(curMonth.y, curMonth.m);
+  const list = applyKind(all);
+  const q = searchQ.trim().toLowerCase();
+  const shown = q ? list.filter(i =>
+      (i.cat||'').toLowerCase().includes(q) || (i.sub||'').toLowerCase().includes(q) ||
+      (i.note||'').toLowerCase().includes(q) || (i.supplier||'').toLowerCase().includes(q) ||
+      (i.order||'').toLowerCase().includes(q)
+    ) : list;
+
+  const today = todayStr();
+  const todaySum = sum(S.items.filter(i=>i.date===today));
+  const monthSum = sum(list);
+  const bizSum = sum(all.filter(i=>i.kind==='biznes'));
+  const perSum = sum(all.filter(i=>i.kind==='shaxsiy'));
+
+  let html = '';
+  if(!STORAGE_OK) html += `<div class="warn"><b>Diqqat!</b> Bu brauzerda saqlash ishlamayapti (maxfiy rejim?). Yozuvlar saqlanmaydi — ilovani oddiy Safari oynasida oching.</div>`;
+  html += backupWarnHTML();
+
+  /* --- kiritish formasi --- */
+  html += `<div class="panel">
+    <h2>Yangi xarajat</h2>
+    ${formHTML(null)}
+    <button class="btn" onclick="submitForm(null)">+ Qo'shish</button>
+  </div>`;
+
+  /* --- oy boshqaruvi --- */
+  html += `<div class="panel">
+    <div class="month-nav">
+      <button onclick="chMonth(-1)">‹</button>
+      <span class="month-label">${OYLAR[curMonth.m-1]} ${curMonth.y}</span>
+      <button onclick="chMonth(1)">›</button>
+    </div>
+    <div class="total-box">
+      <div class="label">${filterKind==='hammasi'?'Oylik jami':(filterKind==='biznes'?'Oylik biznes xarajati':'Oylik shaxsiy xarajat')}</div>
+      <div class="value">${fmt(monthSum)} so'm</div>
+      <div class="sub">Bugun (${fmtDate(today)}): ${fmt(todaySum)} so'm</div>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="cl">Biznes</div><div class="cv">${fmt(bizSum)}</div></div>
+      <div class="chip"><div class="cl">Shaxsiy</div><div class="cv violet">${fmt(perSum)}</div></div>
+      <div class="chip"><div class="cl">Yozuvlar</div><div class="cv">${all.length} ta</div></div>
+    </div>
+    <div class="seg small">
+      <button class="${filterKind==='hammasi'?'on':''}" onclick="filterKind='hammasi'; renderDay();">Hammasi</button>
+      <button class="${filterKind==='biznes'?'on':''}" onclick="filterKind='biznes'; renderDay();">Biznes</button>
+      <button class="${filterKind==='shaxsiy'?'on':''}" onclick="filterKind='shaxsiy'; renderDay();">Shaxsiy</button>
+    </div>
+    <input type="text" id="qbox" placeholder="🔍 Qidirish: kategoriya, izoh, yetkazib beruvchi..." value="${esc(searchQ)}" oninput="searchQ=this.value; renderDayList();">
+  </div>`;
+
+  html += `<div class="panel"><h2>Ro'yxat <span style="font-weight:400;color:var(--muted);font-size:11px">bosib tahrirlash</span></h2><div id="dayList">${dayListHTML(shown)}</div></div>`;
+  app.innerHTML = html;
+  bindForm(null);
+}
+function renderDayList(){
+  const all = monthItems(curMonth.y, curMonth.m);
+  const list = applyKind(all);
+  const q = searchQ.trim().toLowerCase();
+  const shown = q ? list.filter(i =>
+      (i.cat||'').toLowerCase().includes(q) || (i.sub||'').toLowerCase().includes(q) ||
+      (i.note||'').toLowerCase().includes(q) || (i.supplier||'').toLowerCase().includes(q) ||
+      (i.order||'').toLowerCase().includes(q)
+    ) : list;
+  const el = document.getElementById('dayList');
+  if(el) el.innerHTML = dayListHTML(shown);
+}
+function dayListHTML(list){
+  if(!list.length) return `<div class="empty">Bu oy uchun yozuv yo'q.<br>Yuqoridagi formadan qo'shing.</div>`;
+  const byDay = {};
+  list.forEach(i => { (byDay[i.date] = byDay[i.date] || []).push(i); });
+  const days = Object.keys(byDay).sort().reverse();
+  return days.map(d=>{
+    const items = byDay[d].slice().sort((a,b)=> String(b.time||'').localeCompare(String(a.time||'')));
+    const t = sum(items);
+    return `<div class="day-group">
+      <div class="day-label"><span>${dLabel(d)}</span><span class="dt">${fmt(t)} so'm</span></div>
+      ${items.map(entryHTML).join('')}
+    </div>`;
+  }).join('');
+}
+function entryHTML(i){
+  const cls = i.kind==='shaxsiy' ? ' personal' : ((i.pay==='Qarzga olindi' && !i.paid) ? ' debt' : '');
+  const tags = (i.kind==='shaxsiy' ? '<span class="tag p">SHAXSIY</span>' : '')
+             + ((i.pay==='Qarzga olindi' && !i.paid) ? '<span class="tag d">QARZ</span>' : '')
+             + (i.pay==='Karta (plastik)' ? '<span class="tag k">KARTA</span>' : '');
+  const subTxt = [
+    i.sub ? esc(i.sub) : '',
+    i.qty ? (fmtQty(i.qty)+' '+esc(i.unit||'')) : '',
+    (i.qty && i.amount) ? ('1 '+esc(i.unit||'birlik')+' = '+fmt(i.amount/i.qty)) : ''
+  ].filter(Boolean).join(' · ');
+  const noteTxt = [ i.supplier?('🏬 '+esc(i.supplier)):'', i.order?('№'+esc(i.order)):'', i.note?esc(i.note):'' ].filter(Boolean).join(' · ');
+  return `<div class="entry${cls}" onclick="openEdit(${i.id})">
+    <div class="info">
+      <div class="cat">${esc(i.cat)} <span style="color:var(--muted);font-weight:400;font-size:11px">${esc(i.time||'')}</span>${tags}</div>
+      ${subTxt?`<div class="sub">${subTxt}</div>`:''}
+      ${noteTxt?`<div class="note">${noteTxt}</div>`:''}
+    </div>
+    <div class="amt">${fmt(i.amount)}</div>
+  </div>`;
+}
+function chMonth(delta){
+  let m = curMonth.m + delta, y = curMonth.y;
+  if(m<1){ m=12; y--; } if(m>12){ m=1; y++; }
+  curMonth = {y, m};
+  if(view==='rep') renderRep(); else renderDay();
+}
+
+/* ==================== FORMA ==================== */
+function allCats(){ return CATS.map(c=>c.n).concat(S.settings.extraCats); }
+function formHTML(it){
+  const p = it ? '' : 'n';   /* n = new form prefix */
+  const v = it || { date: todayStr(), cat:'Material', sub:'', qty:'', unit:'', amount:'', note:'', kind:'biznes', pay:'Naqd', supplier:'', order:'' };
+  const cats = allCats();
+  return `
+  <div class="fg">
+    <label>Sana</label>
+    <input type="date" id="${p}date" value="${esc(v.date)}">
+    <div class="hint" id="${p}dateWarn" style="margin-top:4px"></div>
+    ${it?'':`<div class="chipsrow" style="margin-top:2px">
+      <span class="tchip" onclick="setDate('ndate',0)">Bugun</span>
+      <span class="tchip" onclick="setDate('ndate',-1)">Kecha</span>
+      <span class="tchip" onclick="setDate('ndate',-2)">2 kun oldin</span>
+    </div>`}
+  </div>
+  <div class="fg">
+    <label>Kategoriya</label>
+    <select id="${p}cat">${cats.map(c=>`<option value="${esc(c)}" ${v.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+  </div>
+
+  <div id="${p}subWrap" style="display:none">
+    <div class="fg">
+      <label id="${p}subLabel">Tafsilot</label>
+      <select id="${p}subSel"></select>
+    </div>
+    <div class="fg" id="${p}subFreeWrap" style="display:none">
+      <label>Nomi</label>
+      <input type="text" id="${p}subFree" placeholder="Nomini yozing" value="">
+    </div>
+  </div>
+
+  <div class="fg" id="${p}qtyWrap" style="display:none">
+    <label id="${p}qtyLabel">Miqdori</label>
+    <input type="number" id="${p}qty" placeholder="0" inputmode="decimal" step="0.01" min="0" value="${esc(v.qty==null?'':v.qty)}">
+  </div>
+
+  <div class="fg">
+    <label>Summasi (so'm)</label>
+    <input type="text" id="${p}amount" placeholder="0" inputmode="numeric" value="${v.amount?fmtInput(v.amount):''}">
+    <div class="hint big" id="${p}amountHint"></div>
+  </div>
+
+  <div class="fg">
+    <label>To'lov turi</label>
+    <select id="${p}pay">${PAYS.map(x=>`<option value="${esc(x)}" ${v.pay===x?'selected':''}>${esc(x)}</option>`).join('')}</select>
+  </div>
+
+  <div class="fg">
+    <label>Yo'nalish</label>
+    <div class="seg" style="margin-bottom:0">
+      <button type="button" id="${p}kb" class="${v.kind==='biznes'?'on':''}" onclick="setKind('${p}',  'biznes')">Biznes</button>
+      <button type="button" id="${p}kp" class="${v.kind==='shaxsiy'?'on':''}" onclick="setKind('${p}','shaxsiy')">Shaxsiy</button>
+    </div>
+    <input type="hidden" id="${p}kind" value="${esc(v.kind)}">
+  </div>
+
+  <details style="margin-bottom:12px">
+    <summary style="font-family:Arial,sans-serif;font-size:12.5px;color:var(--navy);font-weight:700;cursor:pointer;padding:6px 0">
+      ➕ Qo'shimcha (izoh, yetkazib beruvchi, zakaz №)
+    </summary>
+    <div class="fg" style="margin-top:8px">
+      <label>Izoh</label>
+      <input type="text" id="${p}note" placeholder="Izoh" value="${esc(v.note)}">
+    </div>
+    <div class="grid2">
+      <div class="fg">
+        <label>Yetkazib beruvchi / kimdan</label>
+        <input type="text" id="${p}supplier" placeholder="Do'kon nomi" value="${esc(v.supplier)}">
+      </div>
+      <div class="fg">
+        <label>Zakaz № (ixtiyoriy)</label>
+        <input type="text" id="${p}order" placeholder="masalan: 12" value="${esc(v.order)}">
+      </div>
+    </div>
+  </details>`;
+}
+function setDate(elId, delta){
+  const el=document.getElementById(elId); if(!el) return;
+  el.value = shiftDay(todayStr(), delta);
+  dateWarn(elId==='ndate'?'n':'');
+}
+function dateWarn(p){
+  const el=document.getElementById(p+'date'), w=document.getElementById(p+'dateWarn');
+  if(!el||!w) return;
+  if(el.value && el.value!==todayStr()){
+    w.innerHTML = '<span style="color:#7A4A1E;font-weight:700">⚠️ Sana bugungi emas: '+fmtDate(el.value)+'</span>';
+  } else w.textContent='';
+}
+function setKind(p, k){
+  const h=document.getElementById(p+'kind'); if(h) h.value=k;
+  const b=document.getElementById(p+'kb'), s=document.getElementById(p+'kp');
+  if(b) b.classList.toggle('on', k==='biznes');
+  if(s) s.classList.toggle('on', k==='shaxsiy');
+}
+function bindForm(it){
+  const p = it ? '' : 'n';
+  const cat = document.getElementById(p+'cat');
+  const amt = document.getElementById(p+'amount');
+  const qty = document.getElementById(p+'qty');
+  if(!cat) return;
+  cat.onchange = ()=>{ refreshSub(p, null); autoKind(p); };
+  const dt = document.getElementById(p+'date');
+  if(dt) dt.onchange = ()=>dateWarn(p);
+  const subSel = document.getElementById(p+'subSel');
+  if(subSel) subSel.onchange = ()=>refreshSubFree(p);
+  const upd = ()=>{
+    amt.value = fmtInput(amt.value);
+    const a = parseAmount(amt.value);
+    const q = parseFloat(qty && qty.value) || 0;
+    const hint = document.getElementById(p+'amountHint');
+    let txt = a ? (fmt(a)+" so'm") : '';
+    if(a && q && document.getElementById(p+'qtyWrap').style.display!=='none'){
+      const u = (document.getElementById(p+'qtyLabel').textContent.match(/\(([^)]+)\)/)||[])[1] || 'birlik';
+      txt += '  ·  1 '+u+' = '+fmt(a/q)+" so'm";
+    }
+    hint.textContent = txt;
+  };
+  amt.oninput = upd;
+  if(qty) qty.oninput = upd;
+  refreshSub(p, it);
+  dateWarn(p);
+  upd();
+}
+function refreshSub(p, it){
+  const cat = document.getElementById(p+'cat').value;
+  const info = catInfo(cat);
+  const wrap = document.getElementById(p+'subWrap');
+  const sel  = document.getElementById(p+'subSel');
+  const lbl  = document.getElementById(p+'subLabel');
+  const qw   = document.getElementById(p+'qtyWrap');
+  const ql   = document.getElementById(p+'qtyLabel');
+  const freeW= document.getElementById(p+'subFreeWrap');
+  const free = document.getElementById(p+'subFree');
+  let opts = [];
+  if(info.s==='material'){ lbl.textContent='Material turi'; opts = MATERIALS.map(m=>m[0]+'|'+m[1]); }
+  else if(info.s==='furnitura'){ lbl.textContent='Furnitura turi'; opts = FURNITURA.map(m=>m[0]+'|'+m[1]); }
+  else if(info.s==='ishchi'){ lbl.textContent='Ishchi'; opts = S.settings.workers.map(w=>w+'|'); }
+  else if(info.s==='erkin'){ lbl.textContent='Nomi'; opts = []; }
+
+  let freeVal = null;   /* erkin matn maydoniga qo'yiladigan qiymat */
+  if(info.s==='material' || info.s==='furnitura' || info.s==='ishchi'){
+    wrap.style.display='block';
+    sel.style.display='block';
+    sel.innerHTML = opts.map(o=>`<option value="${esc(o)}">${esc(o.split('|')[0])}</option>`).join('');
+    if(it && it.sub){
+      const base = String(it.sub).split(' — ')[0];
+      const exact = opts.find(o=>o.split('|')[0]===it.sub);
+      const byBase = opts.find(o=>o.split('|')[0]===base);
+      if(exact){ sel.value = exact; }
+      else if(byBase){ sel.value = byBase; freeVal = String(it.sub).slice(base.length+3); }
+      else {
+        /* ro'yxatda yo'q nom — «Boshqa ...» ga tushiriladi, nomi saqlanadi */
+        sel.value = opts[opts.length-1] || '';
+        freeVal = it.sub;
+      }
+    }
+    qw.style.display = (info.s==='ishchi') ? 'none' : 'block';
+  } else if(info.s==='erkin'){
+    wrap.style.display='block'; sel.style.display='none';
+    freeW.style.display='block';
+    qw.style.display='none';
+    if(free) free.value = (it && it.sub) ? it.sub : '';
+    return;
+  } else {
+    wrap.style.display='none'; qw.style.display='none';
+    return;
+  }
+  refreshSubFree(p);
+  if(freeVal !== null && free) free.value = freeVal;
+}
+function refreshSubFree(p){
+  const cat = document.getElementById(p+'cat').value;
+  const info = catInfo(cat);
+  const sel = document.getElementById(p+'subSel');
+  const freeW = document.getElementById(p+'subFreeWrap');
+  const free = document.getElementById(p+'subFree');
+  const ql = document.getElementById(p+'qtyLabel');
+  if(info.s==='erkin'){ freeW.style.display='block'; return; }
+  if(!sel || sel.style.display==='none'){ freeW.style.display='none'; return; }
+  const nameSel = (sel.value||'|').split('|')[0];
+  const unit = (sel.value||'|').split('|')[1] || 'dona';
+  if(ql) ql.textContent = 'Miqdori ('+unit+')';
+  const needFree = /^Boshqa /.test(nameSel) || nameSel==='Kunlik nayomnik';
+  freeW.style.display = needFree ? 'block' : 'none';
+  if(!needFree && free) free.value='';
+  const lblFree = freeW.querySelector('label');
+  if(lblFree) lblFree.textContent = nameSel==='Kunlik nayomnik' ? "Nayomnik ismi (ixtiyoriy)" : "Nomi";
+}
+function autoKind(p){
+  const info = catInfo(document.getElementById(p+'cat').value);
+  setKind(p, info.k);
+}
+function readForm(p){
+  const cat = document.getElementById(p+'cat').value;
+  const info = catInfo(cat);
+  const sel = document.getElementById(p+'subSel');
+  const free = document.getElementById(p+'subFree');
+  let subN='', unit='', qty=null;
+  if(info.s==='material' || info.s==='furnitura'){
+    const parts = (sel.value||'|').split('|');
+    subN = /^Boshqa /.test(parts[0]) ? (free.value.trim() || parts[0]) : parts[0];
+    unit = parts[1] || 'dona';
+    const q = parseFloat(document.getElementById(p+'qty').value);
+    qty = (q>0) ? q : null;
+  } else if(info.s==='ishchi'){
+    const base = (sel.value||'|').split('|')[0];
+    const extra = (free && document.getElementById(p+'subFreeWrap').style.display!=='none') ? free.value.trim() : '';
+    subN = extra ? (base+' — '+extra) : base;
+  } else if(info.s==='erkin'){
+    subN = free ? free.value.trim() : '';
+  }
+  return {
+    date: document.getElementById(p+'date').value,
+    cat, sub: subN, qty, unit,
+    amount: parseAmount(document.getElementById(p+'amount').value),
+    pay: document.getElementById(p+'pay').value,
+    kind: document.getElementById(p+'kind').value,
+    note: document.getElementById(p+'note').value.trim(),
+    supplier: document.getElementById(p+'supplier').value.trim(),
+    order: document.getElementById(p+'order').value.trim()
+  };
+}
+function validate(d){
+  if(!d.date){ toast('Sanani kiriting','err'); return false; }
+  const y = dParts(d.date).y;
+  if(y<2020 || y>new Date().getFullYear()+1){ toast('Sana xato: '+fmtDate(d.date),'err'); return false; }
+  if(d.date > shiftDay(todayStr(), 1)){ toast('Kelajak sanasi kiritildi — tekshiring','err'); return false; }
+  if(!(d.amount>0)){ toast('Summani kiriting','err'); return false; }
+  if(d.amount > 500000000){ toast('Summa juda katta — tekshiring','err'); return false; }
+  return true;
+}
+let lastAdd = null;
+function submitForm(){
+  const d = readForm('n');
+  if(!validate(d)) return;
+  /* takroriy yozuv himoyasi */
+  const sig = d.date+'|'+d.cat+'|'+d.sub+'|'+d.amount;
+  if(lastAdd && lastAdd.sig===sig && (Date.now()-lastAdd.t) < 90000){
+    if(!confirmTwice('dupBtn', "Xuddi shu yozuv hozir qo'shildi. Yana bosing")) return;
+  }
+  S.seq++;
+  const item = Object.assign({ id:S.seq, time:nowTime(), paid: d.pay!=='Qarzga olindi', paidDate:'' }, d);
+  S.items.push(item);
+  save();
+  lastAdd = {sig, t:Date.now()};
+  /* forma tozalash — kategoriya va sana saqlanadi (tez kiritish uchun) */
+  document.getElementById('namount').value='';
+  document.getElementById('namountHint').textContent='';
+  document.getElementById('nnote').value='';
+  document.getElementById('nsupplier').value='';
+  document.getElementById('norder').value='';
+  const q=document.getElementById('nqty'); if(q) q.value='';
+  const keepDate = document.getElementById('ndate').value;
+  const keepCat  = document.getElementById('ncat').value;
+  const selEl    = document.getElementById('nsubSel');
+  const keepSub  = selEl ? selEl.value : '';
+  const keepKind = document.getElementById('nkind').value;
+  toast('Qo\'shildi: '+fmt(item.amount)+" so'm", 'ok');
+  renderDay();
+  document.getElementById('ndate').value = keepDate;
+  document.getElementById('ncat').value = keepCat;
+  document.getElementById('npay').value = 'Naqd';  /* har safar «Naqd»ga qaytadi — adashmaslik uchun */
+  refreshSub('n', null);
+  const s2 = document.getElementById('nsubSel');
+  if(s2 && keepSub && Array.from(s2.options).some(o=>o.value===keepSub)){ s2.value = keepSub; refreshSubFree('n'); }
+  setKind('n', keepKind);
+  dateWarn('n');
+  maybeAutoBackup();
+}
+
+/* ==================== TAHRIRLASH (MODAL) ==================== */
+let editId = null;
+function openEdit(id){
+  const it = S.items.find(x=>x.id===id);
+  if(!it) return;
+  editId = id;
+  const box=document.getElementById('modalBox');
+  box.innerHTML = `<h3>Yozuvni tahrirlash</h3>
+    ${formHTML(it)}
+    ${(it.pay==='Qarzga olindi') ? `<div class="fg">
+       <label>Qarz holati</label>
+       <div class="seg" style="margin-bottom:0">
+         <button type="button" id="pdN" class="${!it.paid?'on':''}" onclick="setPaid(false)">To'lanmagan</button>
+         <button type="button" id="pdY" class="${it.paid?'on':''}" onclick="setPaid(true)">To'landi</button>
+       </div>
+       <input type="hidden" id="epaid" value="${it.paid?'1':'0'}">
+     </div>` : ''}
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn" onclick="saveEdit()">💾 Saqlash</button>
+      <button class="btn secondary" onclick="closeModal()">Bekor</button>
+    </div>
+    <button class="btn danger" id="delBtn" onclick="delItem()">🗑 O'chirish</button>
+    <p class="note" style="margin-top:10px">Kiritilgan: ${fmtDate(it.date)} ${esc(it.time||'')}</p>`;
+  document.getElementById('modalBg').classList.add('show');
+  bindForm(it);
+}
+function setPaid(v){
+  document.getElementById('epaid').value = v?'1':'0';
+  document.getElementById('pdY').classList.toggle('on', v);
+  document.getElementById('pdN').classList.toggle('on', !v);
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('show'); editId=null; }
+function saveEdit(){
+  const it = S.items.find(x=>x.id===editId);
+  if(!it){ closeModal(); return; }
+  const d = readForm('');
+  if(!validate(d)) return;
+  Object.assign(it, d);
+  const pe = document.getElementById('epaid');
+  it.paid = (d.pay!=='Qarzga olindi') ? true : (pe ? pe.value==='1' : false);
+  if(it.paid && d.pay==='Qarzga olindi' && !it.paidDate) it.paidDate = todayStr();
+  if(!it.paid) it.paidDate='';
+  save(); closeModal();
+  toast('Saqlandi','ok');
+  if(view==='rep') renderRep(); else renderDay();
+  maybeAutoBackup();
+}
+const armed = {};
+function confirmTwice(btnId, msg){
+  const b=document.getElementById(btnId);
+  if(armed[btnId]){ clearTimeout(armed[btnId]); armed[btnId]=null; return true; }
+  if(b){ b._t = b.textContent; b.textContent = msg; }
+  armed[btnId] = setTimeout(()=>{ armed[btnId]=null; if(b && b._t) b.textContent=b._t; }, 3500);
+  if(!b) toast(msg,'err');
+  return false;
+}
+function delItem(){
+  if(!confirmTwice('delBtn', "Rostdanmi? Yana bosing")) return;
+  S.items = S.items.filter(x=>x.id!==editId);
+  save(); closeModal(); toast("O'chirildi");
+  if(view==='rep') renderRep(); else renderDay();
+  maybeAutoBackup();
+}
+
+/* ==================== HISOBOT ==================== */
+function renderRep(){
+  const app=document.getElementById('app');
+  let html='';
+  html += backupWarnHTML();
+  html += `<div class="seg">
+    <button class="${repMode==='oy'?'on':''}" onclick="repMode='oy'; renderRep();">Oylik</button>
+    <button class="${repMode==='yil'?'on':''}" onclick="repMode='yil'; renderRep();">Yillik</button>
+    <button class="${repMode==='qarz'?'on':''}" onclick="repMode='qarz'; renderRep();">Qarzlar</button>
+  </div>`;
+  if(repMode==='oy') html += repOyHTML();
+  if(repMode==='yil') html += repYilHTML();
+  if(repMode==='qarz') html += repQarzHTML();
+  app.innerHTML = html;
+}
+function backupWarnHTML(){
+  if(!S.items.length) return '';
+  const last = S.settings.gdLastOk;
+  if(!last) return `<div class="warn">📥 <b>Zaxira nusxa hali olinmagan.</b> Sozlamalar → Google Diskka saqlash. Telefon yo'qolsa ma'lumot qaytmaydi!</div>`;
+  const diff = Math.round((new Date(todayStr()) - new Date(last)) / 86400000);
+  if(diff >= 7) return `<div class="warn">📥 Oxirgi zaxira: <b>${fmtDate(last)}</b> (${diff} kun oldin). Sozlamalardan yangi zaxira oling.</div>`;
+  return '';
+}
+function repOyHTML(){
+  const all = monthItems(curMonth.y, curMonth.m);
+  const list = applyKind(all);
+  const prevM = curMonth.m===1 ? {y:curMonth.y-1, m:12} : {y:curMonth.y, m:curMonth.m-1};
+  const prevList = applyKind(monthItems(prevM.y, prevM.m));
+  const tot = sum(list), prevTot = sum(prevList);
+  const diff = tot - prevTot;
+  const pct = prevTot ? Math.round(diff/prevTot*100) : 0;
+  const bizSum = sum(all.filter(i=>i.kind==='biznes'));
+  const perSum = sum(all.filter(i=>i.kind==='shaxsiy'));
+  const debtSum = sum(all.filter(i=>i.pay==='Qarzga olindi' && !i.paid));
+  const dim = daysInMonth(curMonth.y, curMonth.m);
+  const isCur = (curMonth.y===new Date().getFullYear() && curMonth.m===new Date().getMonth()+1);
+  const daysPassed = isCur ? new Date().getDate() : dim;
+  const avg = daysPassed ? tot/daysPassed : 0;
+
+  let html = `<div class="panel">
+    <div class="month-nav">
+      <button onclick="chMonth(-1)">‹</button>
+      <span class="month-label">${OYLAR[curMonth.m-1]} ${curMonth.y}</span>
+      <button onclick="chMonth(1)">›</button>
+    </div>
+    <div class="seg small">
+      <button class="${filterKind==='hammasi'?'on':''}" onclick="filterKind='hammasi'; renderRep();">Hammasi</button>
+      <button class="${filterKind==='biznes'?'on':''}" onclick="filterKind='biznes'; renderRep();">Biznes</button>
+      <button class="${filterKind==='shaxsiy'?'on':''}" onclick="filterKind='shaxsiy'; renderRep();">Shaxsiy</button>
+    </div>
+    <div class="total-box">
+      <div class="label">Jami xarajat</div>
+      <div class="value">${fmt(tot)} so'm</div>
+      <div class="sub">O'tgan oy: ${fmt(prevTot)} so'm ${prevTot?('· '+(diff>=0?'▲ +':'▼ ')+fmt(Math.abs(diff))+' ('+(diff>=0?'+':'−')+Math.abs(pct)+'%)'):''}</div>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="cl">Biznes</div><div class="cv">${fmt(bizSum)}</div></div>
+      <div class="chip"><div class="cl">Shaxsiy</div><div class="cv violet">${fmt(perSum)}</div></div>
+      <div class="chip"><div class="cl">Kunlik o'rtacha</div><div class="cv">${fmt(avg)}</div></div>
+      <div class="chip"><div class="cl">Shu oy qarzga olingan</div><div class="cv red">${fmt(debtSum)}</div></div>
+    </div>
+  </div>`;
+
+  /* kunlik diagramma */
+  const byDate = {};
+  list.forEach(i=>{ byDate[i.date] = (byDate[i.date]||0) + (Number(i.amount)||0); });
+  const maxD = Math.max(1, ...Object.values(byDate));
+  let bars='', xs='';
+  for(let d=1; d<=dim; d++){
+    const iso = curMonth.y+'-'+String(curMonth.m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const v = byDate[iso]||0;
+    const h = Math.round(v/maxD*100);
+    bars += `<div class="cb${iso===todayStr()?' today':''}" style="height:${h}%" title="${d}: ${fmt(v)}"></div>`;
+    xs += `<span>${(d%5===0||d===1)?d:''}</span>`;
+  }
+  html += `<div class="panel"><h2>Kunlar bo'yicha</h2><div class="chart">${bars}</div><div class="chart-x">${xs}</div>
+    <p class="note" style="margin-top:8px">Eng katta kun: ${fmt(maxD)} so'm</p></div>`;
+
+  /* kategoriyalar */
+  const byCat = {}, bySub = {};
+  list.forEach(i=>{
+    byCat[i.cat] = (byCat[i.cat]||0) + (Number(i.amount)||0);
+    if(i.sub){
+      const k = i.cat+''+i.sub;
+      if(!bySub[k]) bySub[k] = {amount:0, qty:0, unit:i.unit||'', cat:i.cat, sub:i.sub};
+      bySub[k].amount += Number(i.amount)||0;
+      if(i.qty) bySub[k].qty += Number(i.qty)||0;
+    }
+  });
+  const cats = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
+  let catHTML = '';
+  if(!cats.length) catHTML = `<div class="empty">Bu oyda yozuv yo'q</div>`;
+  else catHTML = cats.map(c=>{
+    const cid = sid('c', c);
+    const open = !!openIds[cid];
+    const share = tot ? Math.round(byCat[c]/tot*100) : 0;
+    const subs = Object.keys(bySub).filter(k=>bySub[k].cat===c).sort((a,b)=>bySub[b].amount-bySub[a].amount);
+    let inner = '';
+    if(open){
+      if(subs.length){
+        inner = subs.map(k=>{
+          const d = bySub[k];
+          const skid = sid('s', k);
+          const sopen = !!openIds[skid];
+          const unitTxt = d.qty ? (fmtQty(d.qty)+' '+esc(d.unit)+' · 1 '+esc(d.unit||'birlik')+' = '+fmt(d.amount/d.qty)) : '';
+          const ents = list.filter(i=>i.cat===c && i.sub===d.sub).sort((a,b)=>String(b.date+b.time).localeCompare(String(a.date+a.time)));
+          const det = sopen ? ents.map(i=>`<div class="det-row"><span>${dLabel(i.date)}${i.qty?(' · '+fmtQty(i.qty)+' '+esc(i.unit)):''}${i.supplier?(' · '+esc(i.supplier)):''}</span><span>${fmt(i.amount)}</span></div>`).join('') : '';
+          return `<div class="sub-row" onclick="toggleOpen('${skid}')"><span>${sopen?'▾':'▸'} ${esc(d.sub)}${unitTxt?`<br><span style="font-size:11px">${unitTxt}</span>`:''}</span><span class="r">${fmt(d.amount)}</span></div>${det}`;
+        }).join('');
+      } else {
+        const ents = list.filter(i=>i.cat===c).sort((a,b)=>String(b.date+b.time).localeCompare(String(a.date+a.time)));
+        inner = ents.map(i=>`<div class="sub-row"><span>${dLabel(i.date)}${i.note?(' · '+esc(i.note)):''}${i.supplier?(' · '+esc(i.supplier)):''}</span><span class="r">${fmt(i.amount)}</span></div>`).join('');
+      }
+    }
+    return `<div class="cat-row" onclick="toggleOpen('${cid}')">
+        <div style="flex:1;min-width:0">${open?'▾':'▸'} ${esc(c)}<span class="pct">${share}%</span><div class="bar" style="max-width:130px"><i style="width:${share}%"></i></div></div>
+        <span class="amt">${fmt(byCat[c])}</span>
+      </div>${inner}`;
+  }).join('');
+  html += `<div class="panel"><h2>Kategoriyalar bo'yicha</h2>${catHTML}</div>`;
+
+  /* eng katta 5 xarajat */
+  const top = list.slice().sort((a,b)=>b.amount-a.amount).slice(0,5);
+  if(top.length){
+    html += `<div class="panel"><h2>Eng katta 5 xarajat</h2>${top.map(i=>
+      `<div class="sub-row" style="padding-left:0" onclick="openEdit(${i.id})"><span>${dLabel(i.date)} · ${esc(i.cat)}${i.sub?(' — '+esc(i.sub)):''}</span><span class="r" style="color:var(--red);font-weight:700">${fmt(i.amount)}</span></div>`
+    ).join('')}</div>`;
+  }
+
+  /* birlik narxi taqqoslash */
+  const up = unitPrices(list), upPrev = unitPrices(prevList);
+  const upKeys = Object.keys(up).sort((a,b)=>up[b].a-up[a].a);
+  if(upKeys.length){
+    html += `<div class="panel"><h2>Birlik narxi — o'tgan oy bilan</h2>
+      <table class="rep-table">
+        <tr><th>Material</th><th>Miqdor</th><th>1 birlik</th><th>O'zgarish</th></tr>
+        ${upKeys.map(k=>{
+          const d=up[k], pr=upPrev[k];
+          const now=d.a/d.q, before= pr && pr.q ? pr.a/pr.q : 0;
+          const ch = before ? Math.round((now-before)/before*100) : null;
+          const col = ch===null ? 'var(--muted)' : (ch>0 ? 'var(--red)' : (ch<0 ? 'var(--green)' : 'var(--muted)'));
+          const txt = ch===null ? '—' : ((ch>0?'▲ +':(ch<0?'▼ ':''))+ch+'%');
+          return `<tr><td>${esc(k)}</td><td>${fmtQty(d.q)} ${esc(d.u)}</td><td>${fmt(now)}</td><td style="color:${col};font-weight:700">${txt}</td></tr>`;
+        }).join('')}
+      </table>
+      <p class="note">Narx oshgani qizil bilan — yetkazib beruvchi bilan gaplashish signali.</p>
+    </div>`;
+  }
+
+  html += xulosaHTML(all, list, prevList, tot, prevTot, byCat, cats, up, upPrev);
+
+  html += `<div class="btn-row">
+    <button class="btn secondary" onclick="exportCSV('oy')">📊 Excel (CSV)</button>
+    <button class="btn gold" onclick="makePDF()">📄 PDF hisobot</button>
+  </div>
+  <p class="note">CSV faylni Excel'da ochsangiz — jadval tayyor. PDF — chop etish va ulashish uchun.</p>`;
+  return html;
+}
+function unitPrices(list){
+  const m={};
+  list.forEach(i=>{
+    const s = catInfo(i.cat).s;
+    if((s==='material'||s==='furnitura') && Number(i.qty)>0 && Number(i.amount)>0){
+      const k=i.sub||i.cat;
+      if(!m[k]) m[k]={q:0,a:0,u:i.unit||''};
+      m[k].q+=Number(i.qty); m[k].a+=Number(i.amount);
+    }
+  });
+  return m;
+}
+function xulosaData(all, list, prevList, tot, prevTot, byCat, cats, up, upPrev){
+  const L=[], R=[];
+  if(!list.length) return {L, R};
+  /* 1. eng katta kategoriya */
+  if(cats.length){
+    const c=cats[0], sh=tot?Math.round(byCat[c]/tot*100):0;
+    L.push(`Eng katta xarajat — <b>${esc(c)}</b>: ${fmt(byCat[c])} so'm (jamining ${sh}%).`);
+    if(sh>=50) R.push(`«${esc(c)}» jamining yarmidan ko'pi. Shu bitta yo'nalishni 5% ga optimallashtirsangiz — oyiga ${fmt(byCat[c]*0.05)} so'm tejaladi.`);
+  }
+  /* 2. o'sish */
+  if(prevTot){
+    const d=tot-prevTot, p=Math.round(d/prevTot*100);
+    if(p>=20) { L.push(`Xarajat o'tgan oyga nisbatan <b>${p}% oshdi</b> (+${fmt(d)} so'm).`); R.push(`O'sish sababini aniqlang: yangi zakazlar ko'paydimi yoki narxlar oshdimi? Zakaz soni oshmagan bo'lsa — sabab narxda.`); }
+    else if(p<=-20) L.push(`Xarajat o'tgan oyga nisbatan <b>${Math.abs(p)}% kamaydi</b> (−${fmt(Math.abs(d))} so'm).`);
+    else L.push(`O'tgan oyga nisbatan o'zgarish kichik: ${p>=0?'+':'−'}${Math.abs(p)}%.`);
+  }
+  /* 3. shaxsiy ulush */
+  const allTot=sum(all), per=sum(all.filter(i=>i.kind==='shaxsiy'));
+  if(allTot && per/allTot>0.25){
+    L.push(`Shaxsiy va uy xarajati jamining <b>${Math.round(per/allTot*100)}%</b>ini tashkil qilyapti (${fmt(per)} so'm).`);
+    R.push(`Shaxsiy pulni biznes kassasidan alohida ajrating — aks holda eshikning haqiqiy tannarxi ko'rinmaydi.`);
+  }
+  /* 4. qarz */
+  const dbt = debtItems();
+  if(dbt.length){
+    const oldest = dbt.map(i=>i.date).sort()[0];
+    const age = Math.round((new Date(todayStr())-new Date(oldest))/86400000);
+    L.push(`To'lanmagan qarz: <b>${fmt(sum(dbt))} so'm</b> (${dbt.length} ta, eng eskisi ${age} kun).`);
+    if(age>=30) R.push(`${age} kunlik qarz bor. Yetkazib beruvchi ishonchi — bu sizning kelgusi chegirmangiz va navbatingiz. To'lov sanasini belgilab, aytilgan kunda to'lang.`);
+  }
+  /* 5. narx oshishi */
+  const grew=[];
+  Object.keys(up).forEach(k=>{
+    const pr=upPrev[k]; if(!pr||!pr.q) return;
+    const now=up[k].a/up[k].q, before=pr.a/pr.q;
+    const ch=Math.round((now-before)/before*100);
+    if(ch>=5) grew.push(esc(k)+' +'+ch+'%');
+  });
+  if(grew.length){
+    L.push(`Birlik narxi oshgan: <b>${grew.join(', ')}</b>.`);
+    R.push(`Narxi oshgan materiallarni bir martada ko'proq oling yoki yetkazib beruvchi bilan qayta kelishing. Sifatni pasaytirmang — Dormon Doors ustunligi arzonlikda emas, ishonchda.`);
+  }
+  /* 6. kunlik o'rtacha prognoz */
+  const isCur = (curMonth.y===new Date().getFullYear() && curMonth.m===new Date().getMonth()+1);
+  if(isCur){
+    const dp=new Date().getDate(), dim=daysInMonth(curMonth.y,curMonth.m);
+    const forecast = tot/dp*dim;
+    L.push(`Shu sur'atda oy oxirigacha taxminan <b>${fmt(forecast)} so'm</b> bo'ladi.`);
+  }
+  if(!R.length) R.push(`Xarajatlar barqaror. Har oy oxirida PDF hisobotni saqlang va Google Diskka zaxira oling.`);
+  R.push(`Har bir xarajatni <b>o'sha kuni</b> kiriting — keyinga qoldirilgan yozuv unutiladi va hisobot noto'g'ri chiqadi.`);
+  return {L, R};
+}
+function xulosaHTML(all, list, prevList, tot, prevTot, byCat, cats, up, upPrev){
+  const {L,R} = xulosaData(all, list, prevList, tot, prevTot, byCat, cats, up, upPrev);
+  if(!L.length) return `<div class="panel"><h2>Xulosa va tavsiya</h2><p class="note">Bu oyda yozuv yo'q — xulosa chiqarib bo'lmaydi.</p></div>`;
+  return `<div class="panel"><h2>Xulosa va tavsiya</h2>
+    <div style="font-family:Arial,sans-serif;font-size:13px;line-height:1.75">
+      ${L.map(x=>'• '+x).join('<br>')}
+      <div style="margin-top:12px;padding-top:10px;border-top:2px solid var(--gold)">
+        <b style="color:var(--navy)">TAVSIYA:</b><br>${R.map(x=>'→ '+x).join('<br>')}
+      </div>
+    </div>
+  </div>`;
+}
+function repYilHTML(){
+  const years = new Set(S.items.map(i=>dParts(i.date).y).filter(Boolean));
+  years.add(new Date().getFullYear());
+  const yArr = [...years].sort().reverse();
+  if(!years.has(repYear)) repYear = yArr[0];
+  const rows=[]; let tB=0,tS=0,tAll=0,tCnt=0;
+  for(let m=1;m<=12;m++){
+    const items = monthItems(repYear, m);
+    const b = sum(items.filter(i=>i.kind==='biznes'));
+    const s = sum(items.filter(i=>i.kind==='shaxsiy'));
+    rows.push({m, b, s, t:b+s, c:items.length});
+    tB+=b; tS+=s; tAll+=b+s; tCnt+=items.length;
+  }
+  const maxM = Math.max(1, ...rows.map(r=>r.t));
+  let html = `<div class="panel"><h2>Yil</h2>
+    <select onchange="repYear=parseInt(this.value); renderRep();">
+      ${yArr.map(y=>`<option value="${y}" ${y===repYear?'selected':''}>${y}</option>`).join('')}
+    </select></div>`;
+  html += `<div class="chips">
+      <div class="chip"><div class="cl">${repYear} — jami</div><div class="cv">${fmt(tAll)}</div></div>
+      <div class="chip"><div class="cl">Biznes</div><div class="cv">${fmt(tB)}</div></div>
+      <div class="chip"><div class="cl">Shaxsiy</div><div class="cv violet">${fmt(tS)}</div></div>
+      <div class="chip"><div class="cl">Oylik o'rtacha</div><div class="cv">${fmt(tAll/12)}</div></div>
+    </div>`;
+  html += `<div class="panel"><h2>${repYear} — oylar kesimida (so'm)</h2>
+    <table class="rep-table">
+      <tr><th>Oy</th><th>Biznes</th><th>Shaxsiy</th><th>Jami</th></tr>
+      ${rows.map(r=>`<tr style="cursor:pointer" onclick="curMonth={y:${repYear},m:${r.m}}; repMode='oy'; renderRep();">
+        <td>${OYLAR[r.m-1]}${r.t?`<div class="bar" style="width:70px"><i style="width:${Math.round(r.t/maxM*100)}%"></i></div>`:''}</td>
+        <td>${r.b?fmt(r.b):''}</td><td>${r.s?fmt(r.s):''}</td><td><b>${r.t?fmt(r.t):''}</b></td></tr>`).join('')}
+      <tr class="total"><td>JAMI</td><td>${fmt(tB)}</td><td>${fmt(tS)}</td><td>${fmt(tAll)}</td></tr>
+    </table>
+    <p class="note">Oy nomiga bossangiz — o'sha oyning batafsil hisoboti ochiladi.</p>
+  </div>`;
+
+  /* yillik kategoriya */
+  const yItems = S.items.filter(i=>dParts(i.date).y===repYear);
+  const byCat={}; yItems.forEach(i=>{ byCat[i.cat]=(byCat[i.cat]||0)+(Number(i.amount)||0); });
+  const cats=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
+  html += `<div class="panel"><h2>${repYear} — kategoriyalar</h2>
+    ${cats.length?cats.map(c=>{
+      const share = tAll?Math.round(byCat[c]/tAll*100):0;
+      return `<div class="cat-row" style="cursor:default"><div style="flex:1;min-width:0">${esc(c)}<span class="pct">${share}%</span><div class="bar" style="max-width:130px"><i style="width:${share}%"></i></div></div><span class="amt">${fmt(byCat[c])}</span></div>`;
+    }).join(''):'<div class="empty">Yozuv yo\'q</div>'}
+  </div>`;
+  html += `<div class="btn-row"><button class="btn secondary" onclick="exportCSV('yil')">📊 ${repYear} — Excel (CSV)</button></div>`;
+  return html;
+}
+function repQarzHTML(){
+  const d = debtItems().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const total = sum(d);
+  const bySup = {};
+  d.forEach(i=>{ const k=i.supplier||'Kimdan — yozilmagan'; bySup[k]=(bySup[k]||0)+(Number(i.amount)||0); });
+  let html = `<div class="total-box"><div class="label">To'lanmagan qarz (jami)</div><div class="value">${fmt(total)} so'm</div><div class="sub">${d.length} ta yozuv</div></div>`;
+  if(!d.length) return html + `<div class="panel"><div class="empty">To'lanmagan qarz yo'q 🎉</div></div>`;
+  html += `<div class="panel"><h2>Kimga qarzdormiz</h2>
+    ${Object.keys(bySup).sort((a,b)=>bySup[b]-bySup[a]).map(k=>
+      `<div class="cat-row" style="cursor:default"><span>${esc(k)}</span><span class="amt" style="color:var(--red)">${fmt(bySup[k])}</span></div>`).join('')}
+  </div>`;
+  const today = todayStr();
+  html += `<div class="panel"><h2>Ro'yxat</h2>${d.map(i=>{
+    const age = Math.round((new Date(today)-new Date(i.date))/86400000);
+    return `<div class="entry debt" onclick="openEdit(${i.id})">
+      <div class="info">
+        <div class="cat">${esc(i.cat)}${i.sub?(' — '+esc(i.sub)):''}</div>
+        <div class="sub">${fmtDate(i.date)} · ${age} kun oldin${i.supplier?(' · '+esc(i.supplier)):''}</div>
+        ${i.note?`<div class="note">${esc(i.note)}</div>`:''}
+      </div>
+      <div class="amt">${fmt(i.amount)}</div>
+    </div>`;
+  }).join('')}
+  <p class="note" style="margin-top:8px">Qarz to'langanda — yozuvni bosing va «To'landi» ni tanlang.</p></div>`;
+  return html;
+}
+
+/* ==================== EXPORT: CSV ==================== */
+function csvRows(list){
+  const head = ["Sana","Vaqt","Kategoriya","Tafsilot","Miqdori","Birlik","Birlik narxi","Summa (so'm)","To'lov turi","Qarz holati","Yo'nalish","Yetkazib beruvchi","Zakaz №","Izoh"];
+  const rows = list.slice().sort((a,b)=>String(a.date+a.time).localeCompare(String(b.date+b.time))).map(i=>[
+    fmtDate(i.date), i.time||'', i.cat||'', i.sub||'',
+    i.qty!=null?String(i.qty).replace('.',','):'', i.unit||'',
+    (i.qty&&i.amount)?String(Math.round(i.amount/i.qty)):'',
+    String(Math.round(Number(i.amount)||0)),
+    i.pay||'', (i.pay==='Qarzga olindi' ? (i.paid?"To'landi":"To'lanmagan") : ''),
+    i.kind==='shaxsiy'?'Shaxsiy':'Biznes', i.supplier||'', i.order||'', i.note||''
+  ]);
+  const tot = sum(list);
+  rows.push(['','','','','','','','','','','','','','']);
+  rows.push(['JAMI','','','','','','',String(Math.round(tot)),'','','','','','']);
+  return [head].concat(rows);
+}
+function toCSV(rows){
+  return '﻿' + rows.map(r=>r.map(c=>{
+    const s = String(c==null?'':c);
+    return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(';')).join('\r\n');
+}
+async function exportCSV(mode){
+  let list, name;
+  if(mode==='yil'){
+    list = S.items.filter(i=>dParts(i.date).y===repYear);
+    name = 'Dormon_xarajat_'+repYear+'.csv';
+  } else if(mode==='hammasi'){
+    list = S.items.slice(); name = 'Dormon_xarajat_hammasi.csv';
+  } else {
+    list = applyKind(monthItems(curMonth.y, curMonth.m));
+    name = 'Dormon_xarajat_'+curMonth.y+'-'+String(curMonth.m).padStart(2,'0')+'.csv';
+  }
+  if(!list.length){ toast("Bu davrda yozuv yo'q",'err'); return; }
+  await shareOrDownload(toCSV(csvRows(list)), name, 'text/csv;charset=utf-8');
+}
+async function shareOrDownload(text, name, mime){
+  try{
+    const blob = new Blob([text], {type:mime});
+    const file = new File([blob], name, {type:mime});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:name});
+      return;
+    }
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('Fayl yuklab olindi','ok');
+  }catch(e){ if(e && e.name!=='AbortError') toast('Xatolik: '+e.message,'err'); }
+}
+
+/* ==================== EXPORT: PDF ==================== */
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Yuklab bolmadi'));
+    document.head.appendChild(s);
+  });
+}
+let pdfReady=false;
+async function ensurePdfLibs(){
+  if(pdfReady) return;
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  pdfReady=true;
+}
+function phonesHTML(){
+  return (S.settings.phone||DEFAULT_PHONE).split(/[,;]+/).map(s=>esc(s.trim())).filter(Boolean).join('<br>');
+}
+function pdfSheetHTML(){
+  const all = monthItems(curMonth.y, curMonth.m);
+  const list = applyKind(all);
+  const tot = sum(list);
+  const biz = sum(all.filter(i=>i.kind==='biznes'));
+  const per = sum(all.filter(i=>i.kind==='shaxsiy'));
+  const dbt = sum(all.filter(i=>i.pay==='Qarzga olindi' && !i.paid));
+  const byCat={}, bySub={};
+  list.forEach(i=>{
+    byCat[i.cat]=(byCat[i.cat]||0)+(Number(i.amount)||0);
+    if(i.sub){ const k=i.cat+''+i.sub;
+      if(!bySub[k]) bySub[k]={a:0,q:0,u:i.unit||'',cat:i.cat,sub:i.sub};
+      bySub[k].a+=Number(i.amount)||0; if(i.qty) bySub[k].q+=Number(i.qty)||0; }
+  });
+  const cats=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
+  const catRows = cats.map(c=>{
+    const subs=Object.keys(bySub).filter(k=>bySub[k].cat===c).sort((a,b)=>bySub[b].a-bySub[a].a);
+    return `<tr><td><b>${esc(c)}</b></td><td>${tot?Math.round(byCat[c]/tot*100):0}%</td><td><b>${fmt(byCat[c])}</b></td></tr>`
+      + subs.map(k=>{const d=bySub[k];
+        return `<tr class="sb"><td style="padding-left:22px">${esc(d.sub)}${d.q?(' — '+fmtQty(d.q)+' '+esc(d.u)+' (1 '+esc(d.u)+' = '+fmt(d.a/d.q)+")"):''}</td><td></td><td>${fmt(d.a)}</td></tr>`;
+      }).join('');
+  }).join('');
+  const byDate={}; list.forEach(i=>{ byDate[i.date]=(byDate[i.date]||0)+(Number(i.amount)||0); });
+  const cntDate={}; list.forEach(i=>{ cntDate[i.date]=(cntDate[i.date]||0)+1; });
+  const dayRows = Object.keys(byDate).sort().map(d=>`<tr><td>${fmtDate(d)}</td><td>${cntDate[d]} ta</td><td>${fmt(byDate[d])}</td></tr>`).join('');
+  /* xulosa uchun o'tgan oy */
+  const prevM = curMonth.m===1 ? {y:curMonth.y-1,m:12} : {y:curMonth.y,m:curMonth.m-1};
+  const prevList = applyKind(monthItems(prevM.y, prevM.m));
+  const up = unitPrices(list), upPrev = unitPrices(prevList);
+  const upKeys = Object.keys(up).sort((a,b)=>up[b].a-up[a].a);
+  const upRows = upKeys.map(k=>{
+    const d=up[k], pr=upPrev[k];
+    const now=d.a/d.q, before= pr&&pr.q ? pr.a/pr.q : 0;
+    const ch = before ? Math.round((now-before)/before*100) : null;
+    return `<tr><td>${esc(k)}</td><td>${fmtQty(d.q)} ${esc(d.u)}</td><td>${fmt(now)}${ch===null?'':(' ('+(ch>0?'+':'')+ch+'%)')}</td></tr>`;
+  }).join('');
+  const {L,R} = xulosaData(all, list, prevList, tot, sum(prevList), byCat, cats, up, upPrev);
+  const strip = s => String(s).replace(/<\/?b>/g,'');
+  return `<div class="sheet" id="sheetEl">
+    <div class="shead">
+      <div><div class="brand">DORMON <span>DOORS</span></div>
+      <div class="tag2">MDF eshiklar — xarajatlar hisoboti</div></div>
+      <div class="contact"><b>Tel:</b><br>${phonesHTML()}</div>
+    </div>
+    <div class="gline"></div>
+    <div class="sbody">
+      <h3>${OYLAR[curMonth.m-1]} ${curMonth.y} — xarajatlar hisoboti</h3>
+      <div class="kpi">
+        <div><div class="l">Jami</div><div class="v">${fmt(tot)}</div></div>
+        <div><div class="l">Biznes</div><div class="v">${fmt(biz)}</div></div>
+        <div><div class="l">Shaxsiy</div><div class="v">${fmt(per)}</div></div>
+        <div><div class="l">To'lanmagan qarz</div><div class="v" style="color:#7A2E2E">${fmt(dbt)}</div></div>
+      </div>
+      <h3>Kategoriyalar bo'yicha</h3>
+      <table class="t"><tr><th>Kategoriya / tafsilot</th><th>Ulush</th><th>Summa, so'm</th></tr>
+        ${catRows || '<tr><td colspan="3">Yozuv yo\'q</td></tr>'}
+        <tr class="tot"><td>JAMI</td><td>100%</td><td>${fmt(tot)}</td></tr>
+      </table>
+      ${upRows ? `<h3>Birlik narxi (o'tgan oyga nisbatan)</h3>
+      <table class="t"><tr><th>Material</th><th>Miqdor</th><th>1 birlik, so'm</th></tr>${upRows}</table>` : ''}
+      <h3>Kunlar bo'yicha</h3>
+      <table class="t"><tr><th>Sana</th><th>Yozuv</th><th>Summa, so'm</th></tr>
+        ${dayRows || '<tr><td colspan="3">Yozuv yo\'q</td></tr>'}
+        <tr class="tot"><td>JAMI</td><td></td><td>${fmt(tot)}</td></tr>
+      </table>
+      ${L.length ? `<h3>Xulosa va tavsiya</h3>
+      <div style="font-size:12.5px;line-height:1.7">
+        ${L.map(x=>'• '+strip(x)).join('<br>')}
+        <div style="margin-top:10px;padding-top:8px;border-top:2px solid #BF9000">
+          <b style="color:#1F3864">TAVSIYA:</b><br>${R.map(x=>'→ '+strip(x)).join('<br>')}
+        </div>
+      </div>` : ''}
+    </div>
+    <div class="sfoot"><span>DORMON DOORS · ${fmtDate(todayStr())}</span><span>Xarajatlar hisoboti</span></div>
+  </div>`;
+}
+async function makePDF(){
+  toast('PDF tayyorlanmoqda...');
+  try{
+    await ensurePdfLibs();
+    const host=document.getElementById('pdfHost');
+    host.innerHTML = pdfSheetHTML();
+    await new Promise(r=>setTimeout(r,60));
+    const el=document.getElementById('sheetEl');
+    const canvas=await html2canvas(el,{scale:2, backgroundColor:'#ffffff', useCORS:true});
+    const img=canvas.toDataURL('image/jpeg',0.92);
+    const { jsPDF } = window.jspdf;
+    const pdf=new jsPDF('p','mm','a4');
+    const imgW=210, pageH=297;
+    const imgH=canvas.height*imgW/canvas.width;
+    let heightLeft=imgH, position=0;
+    pdf.addImage(img,'JPEG',0,position,imgW,imgH);
+    heightLeft-=pageH;
+    while(heightLeft>0){ position=heightLeft-imgH; pdf.addPage(); pdf.addImage(img,'JPEG',0,position,imgW,imgH); heightLeft-=pageH; }
+    const fname='DormonDoors_xarajat_'+curMonth.y+'-'+String(curMonth.m).padStart(2,'0')+'.pdf';
+    const blob=pdf.output('blob');
+    const file=new File([blob],fname,{type:'application/pdf'});
+    if(navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({files:[file], title:fname});
+    else pdf.save(fname);
+    host.innerHTML='';
+  }catch(e){
+    if(e && e.name==='AbortError') return;
+    toast('PDF xatosi: internet kerak bo\'lishi mumkin','err');
+  }
+}
+
+/* ==================== GOOGLE DISK ZAXIRA ==================== */
+function backupPayload(){
+  return JSON.stringify({ app:'dormon-xarajat', ver:2, savedAt:new Date().toISOString(), state:S });
+}
+async function gdSend(silent){
+  const url = (S.settings.gdUrl||'').trim();
+  if(!url){ if(!silent) toast('Avval Google Disk manzilini kiriting','err'); return false; }
+  const name = 'dormon_xarajat_'+todayStr()+'.json';
+  const body = JSON.stringify({ token:S.settings.gdToken||'', name:name, data:backupPayload() });
+  if(!silent) toast('Google Diskka yuborilmoqda...');
+  try{
+    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body, redirect:'follow' });
+    const txt = await res.text();
+    let j=null; try{ j=JSON.parse(txt); }catch(_){}
+    if(j && j.ok){
+      S.settings.gdLast = todayStr(); S.settings.gdLastOk = todayStr(); save();
+      if(!silent){ toast('Google Diskka saqlandi ✓','ok'); renderSet(); }
+      return true;
+    }
+    throw new Error((j && j.error) ? j.error : 'javob tushunarsiz');
+  }catch(e){
+    /* CORS yopilgan bo'lsa — ko'r rejimda yuborib ko'ramiz */
+    try{
+      await fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body });
+      S.settings.gdLast = todayStr(); S.settings.gdLastOk = todayStr(); save();
+      if(!silent){ toast('Yuborildi (tasdiq olinmadi) — Diskni tekshiring','ok'); renderSet(); }
+      return true;
+    }catch(e2){
+      if(!silent) toast('Yuborilmadi: internetni yoki manzilni tekshiring','err');
+      return false;
+    }
+  }
+}
+async function gdRestore(){
+  const url=(S.settings.gdUrl||'').trim();
+  if(!url){ toast('Google Disk manzili yo\'q','err'); return; }
+  if(!confirmTwice('gdRestBtn', 'Hozirgi ma\'lumot almashadi! Yana bosing')) return;
+  toast('Diskdan olinmoqda...');
+  try{
+    const res = await fetch(url+'?action=last&token='+encodeURIComponent(S.settings.gdToken||''));
+    const j = await res.json();
+    if(!j.ok) throw new Error(j.error||'topilmadi');
+    const parsed = JSON.parse(j.data);
+    const st = parsed.state || parsed;
+    if(!st || !Array.isArray(st.items)) throw new Error('fayl mos emas');
+    S = st; save();
+    toast('Tiklandi: '+S.items.length+' ta yozuv ('+(j.date||'')+')','ok');
+    show('day');
+  }catch(e){ toast('Tiklanmadi: '+e.message,'err'); }
+}
+async function gdTest(){
+  const url=(S.settings.gdUrl||'').trim();
+  if(!url){ toast('Manzilni kiriting','err'); return; }
+  toast('Tekshirilmoqda...');
+  try{
+    const res = await fetch(url+'?action=ping&token='+encodeURIComponent(S.settings.gdToken||''));
+    const j = await res.json();
+    if(j.ok) toast('Aloqa bor ✓ Google Disk tayyor','ok');
+    else toast('Javob: '+(j.error||'xato'),'err');
+  }catch(e){ toast("Aloqa yo'q — manzilni va «Anyone» ruxsatini tekshiring",'err'); }
+}
+let autoTried=false;
+function maybeAutoBackup(){
+  if(autoTried) return;
+  if(!S.settings.gdAuto || !S.settings.gdUrl) return;
+  if(S.settings.gdLast === todayStr()) return;
+  autoTried = true;
+  gdSend(true);
+}
+
+/* ==================== SOZLAMALAR ==================== */
+function renderSet(){
+  const app=document.getElementById('app');
+  const st=S.settings;
+  let html='';
+  html += `<div class="panel"><h2>📥 Google Disk zaxirasi</h2>
+    <div class="fg"><label>Apps Script manzili (bir marta kiritiladi)</label>
+      <input type="text" id="gdUrl" placeholder="https://script.google.com/macros/s/..../exec" value="${esc(st.gdUrl)}" oninput="S.settings.gdUrl=this.value.trim(); save();"></div>
+    <div class="fg"><label>Maxfiy so'z (Apps Script bilan bir xil bo'lsin)</label>
+      <input type="text" id="gdToken" value="${esc(st.gdToken)}" oninput="S.settings.gdToken=this.value.trim(); save();"></div>
+    <div class="fg"><label>Avtomatik zaxira</label>
+      <div class="seg" style="margin-bottom:0">
+        <button class="${st.gdAuto?'on':''}" onclick="S.settings.gdAuto=true; save(); renderSet();">Yoqilgan (kuniga 1 marta)</button>
+        <button class="${!st.gdAuto?'on':''}" onclick="S.settings.gdAuto=false; save(); renderSet();">O'chirilgan</button>
+      </div></div>
+    <div class="btn-row"><button class="btn secondary" onclick="gdTest()">🔌 Aloqani tekshirish</button>
+      <button class="btn" onclick="gdSend(false)">☁️ Hozir saqlash</button></div>
+    <div class="btn-row"><button class="btn danger" id="gdRestBtn" onclick="gdRestore()">⬇️ Diskdan tiklash</button></div>
+    <p class="note">Oxirgi muvaffaqiyatli zaxira: <b>${st.gdLastOk?fmtDate(st.gdLastOk):'hali yo\'q'}</b>.
+    Sozlash yo'riqnomasi: «google-disk-qollanma» faylida. Diskdagi papka nomi: <b>Dormon Doors zaxira</b>.</p>
+  </div>`;
+
+  html += `<div class="panel"><h2>💾 Fayl orqali zaxira</h2>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="fileBackup()">📤 Fayl saqlash / ulashish</button>
+      <button class="btn secondary" onclick="document.getElementById('impFile').click()">📥 Fayldan tiklash</button>
+    </div>
+    <input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="fileRestore(this)">
+    <div class="btn-row"><button class="btn secondary" onclick="exportCSV('hammasi')">📊 Hamma yozuvlar — Excel (CSV)</button></div>
+    <p class="note">Internet bo'lmasa — faylni Telegram «Saqlangan xabarlar»ga tashlang.</p>
+  </div>`;
+
+  html += `<div class="panel"><h2>👷 Ishchilar</h2>
+    ${st.workers.map((w,idx)=>`<div class="cat-row" style="cursor:default"><span>${esc(w)}</span><button class="tchip" onclick="delWorker(${idx})">✕</button></div>`).join('')}
+    <div class="grid2" style="margin-top:10px">
+      <input type="text" id="newWorker" placeholder="Yangi ishchi — masalan: Jasur — usta">
+      <button class="btn secondary" onclick="addWorker()">+ Qo'shish</button>
+    </div>
+  </div>`;
+
+  html += `<div class="panel"><h2>🏷 Qo'shimcha kategoriyalar</h2>
+    ${st.extraCats.length?st.extraCats.map((c,idx)=>`<div class="cat-row" style="cursor:default"><span>${esc(c)}</span><button class="tchip" onclick="delCat(${idx})">✕</button></div>`).join(''):'<p class="note">Qo\'shimcha kategoriya yo\'q. Standart 18 ta kategoriya ishlayapti.</p>'}
+    <div class="grid2" style="margin-top:10px">
+      <input type="text" id="newCat" placeholder="Masalan: Sug'urta">
+      <button class="btn secondary" onclick="addCat()">+ Qo'shish</button>
+    </div>
+  </div>`;
+
+  html += `<div class="panel"><h2>📞 Kompaniya</h2>
+    <div class="fg"><label>Telefon (PDFda chiqadi)</label>
+      <input type="text" value="${esc(st.phone)}" oninput="S.settings.phone=this.value; save();"></div>
+  </div>`;
+
+  const first = S.items.length ? S.items.map(i=>i.date).sort()[0] : '';
+  html += `<p class="note" style="text-align:center">DORMON DOORS — Xarajatlar · ${APP_VER}<br>
+    Yozuvlar: ${S.items.length} ta${first?(' · birinchi yozuv: '+fmtDate(first)):''}<br>
+    Saqlash: ${STORAGE_OK?'ishlayapti ✓':'ISHLAMAYAPTI — Safari orqali oching!'}</p>`;
+  app.innerHTML=html;
+}
+function addWorker(){
+  const el=document.getElementById('newWorker'); const v=el.value.trim();
+  if(!v){ toast('Ism yozing','err'); return; }
+  if(S.settings.workers.includes(v)){ toast('Bunday ishchi bor','err'); return; }
+  S.settings.workers.push(v); save(); renderSet(); toast("Qo'shildi",'ok');
+}
+function delWorker(idx){
+  const w=S.settings.workers[idx];
+  if(S.items.some(i=>i.sub===w || String(i.sub).startsWith(w+' — '))){ toast("Bu ishchida yozuvlar bor — o'chirilmaydi",'err'); return; }
+  S.settings.workers.splice(idx,1); save(); renderSet();
+}
+function addCat(){
+  const el=document.getElementById('newCat'); const v=el.value.trim();
+  if(!v){ toast('Nom yozing','err'); return; }
+  if(allCats().includes(v)){ toast('Bunday kategoriya bor','err'); return; }
+  S.settings.extraCats.push(v); save(); renderSet(); toast("Qo'shildi",'ok');
+}
+function delCat(idx){
+  const c=S.settings.extraCats[idx];
+  if(S.items.some(i=>i.cat===c)){ toast("Bu kategoriyada yozuvlar bor — o'chirilmaydi",'err'); return; }
+  S.settings.extraCats.splice(idx,1); save(); renderSet();
+}
+async function fileBackup(){
+  await shareOrDownload(backupPayload(), 'dormon_xarajat_'+todayStr()+'.json', 'application/json');
+  S.settings.gdLast = todayStr(); S.settings.gdLastOk = todayStr(); save();
+}
+function fileRestore(inp){
+  const f=inp.files && inp.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=function(){
+    try{
+      const parsed=JSON.parse(rd.result);
+      const st = parsed.state || parsed;
+      if(!st || !Array.isArray(st.items)) throw new Error('bu xarajat zaxira fayli emas');
+      S=st; save();
+      toast('Tiklandi: '+S.items.length+' ta yozuv','ok');
+      show('day');
+    }catch(e){ toast('Tiklanmadi: '+e.message,'err'); }
+  };
+  rd.readAsText(f); inp.value='';
+}
+
+/* ==================== START ==================== */
+show('day');
+if(NEEDS_FIRST_SAVE && S.items.length){ save(); toast('Eski yozuvlar ko\'chirildi: '+S.items.length+' ta','ok'); }
+maybeAutoBackup();
+</script>
+</body>
+</html>
