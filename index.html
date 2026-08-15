@@ -204,6 +204,27 @@ const ST_COLORS = {
 const OYLAR = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
 const STORAGE_OK = (function(){ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }catch(e){ return false; } })();
 
+/* =================== RASM OMBORI (IndexedDB — katta hajm, matn omboriga tegmaydi) =================== */
+const IDB_NAME='dormon_imgs', IDB_STORE='imgs';
+function idbOpen(){ return new Promise(function(res,rej){
+  const q=indexedDB.open(IDB_NAME,1);
+  q.onupgradeneeded=function(){ q.result.createObjectStore(IDB_STORE); };
+  q.onsuccess=function(){ res(q.result); };
+  q.onerror=function(){ rej(q.error); };
+});}
+function idbPut(k,v){ return idbOpen().then(function(db){ return new Promise(function(res,rej){
+  const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(v,k);
+  tx.oncomplete=function(){ res(); }; tx.onerror=function(){ rej(tx.error); };
+});});}
+function idbGet(k){ return idbOpen().then(function(db){ return new Promise(function(res,rej){
+  const tx=db.transaction(IDB_STORE,'readonly'); const r=tx.objectStore(IDB_STORE).get(k);
+  r.onsuccess=function(){ res(r.result||null); }; r.onerror=function(){ rej(r.error); };
+});});}
+function idbDel(k){ return idbOpen().then(function(db){ return new Promise(function(res){
+  const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).delete(k);
+  tx.oncomplete=function(){ res(); }; tx.onerror=function(){ res(); };
+});});}
+
 /* =================== DOLLAR KURSI (FINANS ilovasi bilan umumiy) =================== */
 const KURS_KEY = 'dormon_kurs_v1';
 function loadKurs(){
@@ -270,7 +291,16 @@ S.orders.forEach(o => {
   if(o.deadline === undefined) o.deadline = '';
   if(o.deliveredDate === undefined) o.deliveredDate = '';
   (o.payments||[]).forEach(pm=>{ if(pm.method===undefined) pm.method='Naqd'; });
-  (o.rooms||[]).forEach(r=>{ if(r.type===undefined) r.type='eshik'; if(r.leaf===undefined) r.leaf=1; if(r.img===undefined) r.img=''; });
+  (o.rooms||[]).forEach(r=>{
+    if(r.type===undefined) r.type='eshik';
+    if(r.leaf===undefined) r.leaf=1;
+    if(r.imgKey===undefined) r.imgKey='';
+    if(r.img && String(r.img).indexOf('data:')===0){
+      const k='o'+o.id+'_r'+r.id;
+      try{ idbPut(k, r.img); }catch(e){}
+      r.imgKey=k; r.img='';
+    }
+  });
 });
 save();
 
@@ -469,7 +499,7 @@ function addRoomObj(o){
     id:o.rseq, name:'', model:'', rang:'', izoh:'',
     qty:1, h:2.30, w:0.90, dw:S.settings.defDw, tomon:2,
     dastakQty:1, petlyaQty:3, qulfQty:1, shpingaletQty:0,
-    type:'eshik', leaf:1, img:'',
+    type:'eshik', leaf:1, imgKey:'',
     kvNarx:S.settings.defKv
   });
 }
@@ -553,6 +583,7 @@ function renderOrder(){
   html+=`<p class="note">Nalichnik proyom bo'yicha: [(bo'yi+0.12)×2 + (eni+0.25)] × tomon. Dobor: (bo'yi×2+eni) × (kengligi−0.09). Qo'sh eshik qo'lda tanlanadi (Eshik turi). Hammasi avtomatik saqlanadi.</p>`;
   app.innerHTML=html;
   refreshTotals(o.id);
+  o.rooms.forEach(r=>{ if(r.imgKey){ idbGet(r.imgKey).then(d=>{ const el=document.getElementById('rimg_'+r.id); if(el&&d) el.src=d; }).catch(function(){}); } });
 }
 function roomCardHTML(o,r,idx){
   const t=rType(r), T=RTYPES[t], isKvm=(T.m==='kvm'), isEshik=(t==='eshik');
@@ -597,9 +628,9 @@ function roomCardHTML(o,r,idx){
   }
   body+=`<div class="sub-label">Model rasmi (mijoz tanlagan fason)</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-      ${r.img?`<img src="${r.img}" style="width:74px;height:74px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">`:''}
-      <button class="btn secondary" style="flex:1" onclick="document.getElementById('imgInp_${r.id}').click()">${r.img?'🖼 Rasmni almashtirish':'📷 Rasm qo\'shish'}</button>
-      ${r.img?`<button class="del-btn" onclick="delRoomImg(${o.id},${r.id})">✕</button>`:''}
+      ${r.imgKey?`<img id="rimg_${r.id}" src="" style="width:74px;height:74px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#EFEBE0">`:''}
+      <button class="btn secondary" style="flex:1" onclick="document.getElementById('imgInp_${r.id}').click()">${r.imgKey?'🖼 Rasmni almashtirish':'📷 Rasm qo\'shish'}</button>
+      ${r.imgKey?`<button class="del-btn" onclick="delRoomImg(${o.id},${r.id})">✕</button>`:''}
       <input type="file" id="imgInp_${r.id}" accept="image/*" style="display:none" onchange="roomImg(${o.id},${r.id},this)">
     </div>`;
   body+=`<div class="sub-label">Izoh (erkin matn)</div>
@@ -630,7 +661,7 @@ function upOrder(oid,f,v){ const o=getOrder(oid); if(!o)return; o[f]=v; save(); 
 function upPrice(oid,k,v){ const o=getOrder(oid); if(!o)return; if(!o.prices) o.prices={...S.settings.prices}; o.prices[k]=parseFloat(v)||0; save(); refreshTotals(oid); }
 function upRoom(oid,rid,f,v){ const o=getOrder(oid); if(!o)return; const r=o.rooms.find(x=>x.id===rid); if(!r)return; r[f]=v; save(); refreshTotals(oid); }
 function addRoomBtn(oid){ const o=getOrder(oid); if(!o)return; addRoomObj(o); save(); renderOrder(); }
-function delRoom(oid,rid){ const o=getOrder(oid); if(!o)return; o.rooms=o.rooms.filter(x=>x.id!==rid); save(); renderOrder(); }
+function delRoom(oid,rid){ const o=getOrder(oid); if(!o)return; const rr=o.rooms.find(x=>x.id===rid); if(rr&&rr.imgKey){ try{ idbDel(rr.imgKey); }catch(e){} } o.rooms=o.rooms.filter(x=>x.id!==rid); save(); renderOrder(); }
 function upStatus(oid,v){
   const o=getOrder(oid); if(!o)return;
   o.status=v;
@@ -646,20 +677,24 @@ function roomImg(oid,rid,inp){
     const img=new Image();
     img.onload=function(){
       const c=document.createElement('canvas');
-      const MAX=600, k=Math.min(1, MAX/Math.max(img.width,img.height));
+      const MAX=1200, k=Math.min(1, MAX/Math.max(img.width,img.height));
       c.width=Math.max(1,Math.round(img.width*k)); c.height=Math.max(1,Math.round(img.height*k));
       c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      let d=c.toDataURL('image/jpeg',0.7);
-      if(d.length>160000) d=c.toDataURL('image/jpeg',0.45);
+      let d=c.toDataURL('image/jpeg',0.8);
+      if(d.length>450000) d=c.toDataURL('image/jpeg',0.6);
+      if(d.length>900000) d=c.toDataURL('image/jpeg',0.45);
       const o=getOrder(oid); const r=o&&o.rooms.find(x=>x.id===rid); if(!r) return;
-      r.img=d; save(); renderOrder(); toast('Rasm qo\'shildi');
+      const key='o'+oid+'_r'+rid;
+      idbPut(key,d).then(function(){
+        r.imgKey=key; r.img=''; save(); renderOrder(); toast('Rasm saqlandi');
+      }).catch(function(){ toast('Rasm saqlanmadi — qurilma xotirasini tekshiring'); });
     };
     img.src=rd.result;
   };
   rd.readAsDataURL(f);
   inp.value='';
 }
-function delRoomImg(oid,rid){ const o=getOrder(oid); if(!o)return; const r=o.rooms.find(x=>x.id===rid); if(!r)return; r.img=''; save(); renderOrder(); }
+function delRoomImg(oid,rid){ const o=getOrder(oid); if(!o)return; const r=o.rooms.find(x=>x.id===rid); if(!r)return; if(r.imgKey){ try{ idbDel(r.imgKey); }catch(e){} } r.imgKey=''; r.img=''; save(); renderOrder(); }
 function deadlineInfo(o){
   if(o.status==='Bekor qilindi') return null;
   if(o.deliveredDate) return {c:'var(--green)', t:'✅ Topshirilgan: '+fmtDate(o.deliveredDate)};
@@ -728,6 +763,8 @@ function delOrder(oid){
   const btn=document.getElementById('delOrderBtn');
   if(!delArm){ delArm=true; btn.textContent='Rostdanmi? Yana bosing'; delTm=setTimeout(()=>{delArm=false; if(btn) btn.textContent="🗑 O'chirish";},3000); return; }
   clearTimeout(delTm); delArm=false;
+  const _od=getOrder(oid);
+  if(_od) (_od.rooms||[]).forEach(r=>{ if(r.imgKey){ try{ idbDel(r.imgKey); }catch(e){} } });
   S.orders=S.orders.filter(o=>o.id!==oid);
   save(); toast('Zakaz o\'chirildi'); show('list');
 }
@@ -877,7 +914,9 @@ function renderSettings(){
 }
 async function backupExport(){
   try{
-    const data=JSON.stringify(S,null,1);
+    const imgs={};
+    for(const o of S.orders){ for(const r of (o.rooms||[])){ if(r.imgKey){ try{ const d=await idbGet(r.imgKey); if(d) imgs[r.imgKey]=d; }catch(e){} } } }
+    const data=JSON.stringify({app:'dormon-zakaz', ver:5, state:S, imgs:imgs});
     const fname='dormon_backup_'+todayStr()+'.json';
     const blob=new Blob([data],{type:'application/json'});
     const file=new File([blob],fname,{type:'application/json'});
@@ -897,9 +936,11 @@ function backupImport(inp){
   const rd=new FileReader();
   rd.onload=function(){
     try{
-      const data=JSON.parse(rd.result);
-      if(!data || !Array.isArray(data.orders) || !data.settings) throw new Error("Bu Dormon Doors zaxira fayli emas");
-      S=data; save();
+      const parsed=JSON.parse(rd.result);
+      const st=(parsed && parsed.state) ? parsed.state : parsed;
+      if(!st || !Array.isArray(st.orders) || !st.settings) throw new Error("Bu Dormon Doors zaxira fayli emas");
+      S=st; save();
+      if(parsed && parsed.imgs){ Object.keys(parsed.imgs).forEach(function(k){ try{ idbPut(k, parsed.imgs[k]); }catch(e){} }); }
       toast('Zaxira tiklandi: '+S.orders.length+' ta zakaz');
       show('list');
     }catch(e){ toast('Tiklab bo\'lmadi: '+e.message); }
@@ -927,7 +968,7 @@ function phonesHTML(){
   const raw = (S.settings.phone || DEFAULT_PHONE);
   return raw.split(/[,;]+/).map(s => esc(s.trim())).filter(Boolean).join('<br>');
 }
-function pdfSheetHTML(o){
+function pdfSheetHTML(o, IMGS){
   const p=orderPrices(o);
   const c=calcOrder(o);
   let rowsHtml='';
@@ -946,7 +987,7 @@ function pdfSheetHTML(o){
       <td><div class="rname">${esc(r.name)||rc.T.n}</div>
           <div class="rdet">${detParts.join(' · ')}</div>
           <div class="rdet" style="margin-top:5px">${compHtml}</div>
-          ${r.img?`<img src="${r.img}" style="width:110px;border-radius:6px;margin-top:6px">`:''}</td>
+          ${IMGS&&IMGS[r.id]?`<img src="${IMGS[r.id]}" style="width:150px;border-radius:6px;margin-top:6px;border:1px solid #E4DFD3">`:''}</td>
       <td class="r">${olcham}</td>
       <td class="r">${soni}</td>
       <td class="r">${fmt(rc.perDoor)}</td>
@@ -1002,8 +1043,10 @@ async function makePDF(oid){
   toast('PDF tayyorlanmoqda...');
   try{
     await ensurePdfLibs();
+    const IMGS={};
+    for(const r of o.rooms){ if(r.imgKey){ try{ const d=await idbGet(r.imgKey); if(d) IMGS[r.id]=d; }catch(e){} } }
     const host=document.getElementById('pdfHost');
-    host.innerHTML=pdfSheetHTML(o);
+    host.innerHTML=pdfSheetHTML(o, IMGS);
     await new Promise(r=>setTimeout(r,60));
     const el=document.getElementById('sheetEl');
     const canvas=await html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true});
