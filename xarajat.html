@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Dormon Doors — Xarajatlar</title>
+<title>Dormon Doors — FINANS</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Xarajatlar">
+<meta name="apple-mobile-web-app-title" content="FINANS">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1F3864">
@@ -49,6 +49,7 @@
   input:focus, select:focus, textarea:focus{ outline:2px solid var(--navy); outline-offset:1px; }
   .fg{ margin-bottom:11px; }
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
   .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
   .hint{ font-size:11.5px; font-family:Arial,sans-serif; color:var(--muted); margin:-6px 0 11px 2px; min-height:14px; }
   .hint.big{ color:var(--navy); font-weight:700; font-size:13px; }
@@ -207,7 +208,7 @@
 
 <header>
   <h1 id="hTitle">DORMON DOORS</h1>
-  <p id="hSub">Kunlik xarajatlar va hisobot</p>
+  <p id="hSub">FINANS — kunlik xarajatlar</p>
 </header>
 
 <div class="wrap" id="app"></div>
@@ -215,6 +216,7 @@
 <nav class="bottom-nav">
   <button id="nav_day" onclick="show('day')"><span class="ic">✍️</span>Kunlik</button>
   <button id="nav_rep" onclick="show('rep')"><span class="ic">📊</span>Hisobot</button>
+  <button id="nav_cost" onclick="show('cost')"><span class="ic">🧮</span>Tannarx</button>
   <button id="nav_set" onclick="show('set')"><span class="ic">⚙️</span>Sozlamalar</button>
 </nav>
 
@@ -273,6 +275,32 @@ const PAYS = ['Naqd','Karta (plastik)',"O'tkazma (bank)","Qarzga olindi"];
 
 const STORAGE_OK = (function(){ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }catch(e){ return false; } })();
 
+/* ==================== DOLLAR KURSI (ikkala ilova uchun umumiy) ==================== */
+const KURS_KEY = 'dormon_kurs_v1';
+function loadKurs(){
+  try{ const r = localStorage.getItem(KURS_KEY); const k = r ? JSON.parse(r) : null;
+    return (k && typeof k.rate!=='undefined') ? k : { rate:0, date:'', src:'Hamkorbank — sotib olish' };
+  }catch(e){ return { rate:0, date:'', src:'Hamkorbank — sotib olish' }; }
+}
+function saveKurs(){ try{ localStorage.setItem(KURS_KEY, JSON.stringify(KURS)); }catch(e){} }
+let KURS = loadKurs();
+function kursHolat(){
+  if(!(KURS.rate>0)) return 'yoq';
+  if(KURS.date === todayStr()) return 'ok';
+  const d = Math.round((new Date(todayStr()) - new Date(KURS.date))/86400000);
+  return (isNaN(d) || d>=1) ? 'eski' : 'ok';
+}
+function kursKunlar(){
+  if(!KURS.date) return 0;
+  return Math.max(0, Math.round((new Date(todayStr()) - new Date(KURS.date))/86400000));
+}
+function kursWarnHTML(){
+  const h = kursHolat();
+  if(h==='yoq') return `<div class="warn">💵 <b>Dollar kursi kiritilmagan.</b> Dollarda xarajat yozish uchun Sozlamalar → «Dollar kursi» ga bugungi Hamkorbank kursini yozing.</div>`;
+  if(h==='eski') return `<div class="warn">💵 Kurs <b>${kursKunlar()} kun</b> oldin yangilangan (${fmtDate(KURS.date)}): 1$ = ${fmt(KURS.rate)} so'm. Bugungi kursni tekshiring.</div>`;
+  return '';
+}
+
 /* ==================== HOLAT ==================== */
 function defaultState(){
   return {
@@ -281,9 +309,11 @@ function defaultState(){
       phone: DEFAULT_PHONE,
       workers: WORKERS_DEF.slice(),
       extraCats: [],
-      gdUrl: '', gdToken: 'dormon2026', gdAuto: true, gdLast: '', gdLastOk: ''
+      gdUrl: '', gdToken: 'dormon2026', gdAuto: true, gdLast: '', gdLastOk: '',
+      kassa: { uzs:0, usd:0, karta:0, start:'' }
     },
-    items: []
+    items: [],
+    models: [], mseq: 0
   };
 }
 function load(){
@@ -318,6 +348,9 @@ if(!Array.isArray(S.items)) S.items = [];
 if(!Array.isArray(S.settings.workers) || !S.settings.workers.length) S.settings.workers = WORKERS_DEF.slice();
 if(!Array.isArray(S.settings.extraCats)) S.settings.extraCats = [];
 if(!S.settings.gdToken) S.settings.gdToken = 'dormon2026';
+if(!S.settings.kassa) S.settings.kassa = { uzs:0, usd:0, karta:0, start:'' };
+if(!Array.isArray(S.models)) S.models = [];
+if(!S.mseq) S.mseq = S.models.reduce((m,x)=>Math.max(m, Number(x.id)||0), 0);
 if(!S.seq) S.seq = S.items.reduce((m,i)=>Math.max(m, Number(i.id)||0), 0);
 S.items.forEach(i=>{
   if(!i.kind) i.kind = 'biznes';
@@ -335,7 +368,14 @@ function save(){
 /* ==================== YORDAMCHI ==================== */
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmt(n){ if(n==null||isNaN(n)) n=0; return Math.round(n).toLocaleString('ru-RU').replace(/[, ]/g,' '); }
-function fmtQty(n){ if(n==null||isNaN(n)) n=0; return (Math.round(n*1000)/1000).toLocaleString('ru-RU').replace(/[, ]/g,' '); }
+function fmtQty(n){ if(n==null||isNaN(n)) n=0; return String(Math.round(n*1000)/1000).replace('.',','); }
+function fmtUsd(n){
+  n = Number(n)||0;
+  const neg = n<0; n = Math.abs(n);
+  const i = Math.floor(n), c = Math.round((n-i)*100);
+  const istr = i.toLocaleString('ru-RU').replace(/[,  ]/g,' ');
+  return (neg?'−':'') + istr + (c ? (','+String(c).padStart(2,'0')) : '');
+}
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function shiftDay(iso, delta){
   const p = iso.split('-').map(Number);
@@ -369,14 +409,15 @@ const openIds = {};      // ochilgan bo'limlar
 
 function show(v){
   view=v;
-  ['day','rep','set'].forEach(n=>{
+  ['day','rep','cost','set'].forEach(n=>{
     const b=document.getElementById('nav_'+n);
     if(b) b.classList.toggle('active', v===n);
   });
   const hT=document.getElementById('hTitle'), hS=document.getElementById('hSub');
-  if(v==='day'){ hT.textContent='DORMON DOORS'; hS.textContent='Kunlik xarajatlar'; renderDay(); }
+  if(v==='day'){ hT.textContent='DORMON DOORS'; hS.textContent='FINANS — kunlik xarajatlar'; renderDay(); }
   if(v==='rep'){ hT.textContent='HISOBOT'; hS.textContent='Oylik · yillik · qarzlar'; renderRep(); }
-  if(v==='set'){ hT.textContent='SOZLAMALAR'; hS.textContent='Zaxira, ishchilar, kategoriyalar'; renderSet(); }
+  if(v==='cost'){ hT.textContent='TANNARX'; hS.textContent="Model bo'yicha material xarajati"; renderCost(); }
+  if(v==='set'){ hT.textContent='SOZLAMALAR'; hS.textContent='Zaxira, kassa, PIN'; renderSet(); }
   window.scrollTo(0,0);
 }
 function toggleOpen(id){ openIds[id] = !openIds[id]; if(view==='rep') renderRep(); else renderDay(); }
@@ -414,6 +455,8 @@ function renderDay(){
   let html = '';
   if(!STORAGE_OK) html += `<div class="warn"><b>Diqqat!</b> Bu brauzerda saqlash ishlamayapti (maxfiy rejim?). Yozuvlar saqlanmaydi — ilovani oddiy Safari oynasida oching.</div>`;
   html += backupWarnHTML();
+  html += kursWarnHTML();
+  html += kassaPanelHTML();
 
   /* --- kiritish formasi --- */
   html += `<div class="panel">
@@ -481,9 +524,11 @@ function entryHTML(i){
   const cls = i.kind==='shaxsiy' ? ' personal' : ((i.pay==='Qarzga olindi' && !i.paid) ? ' debt' : '');
   const tags = (i.kind==='shaxsiy' ? '<span class="tag p">SHAXSIY</span>' : '')
              + ((i.pay==='Qarzga olindi' && !i.paid) ? '<span class="tag d">QARZ</span>' : '')
+             + (i.cur==='USD' ? '<span class="tag" style="background:#2E6B34">$</span>' : '')
              + (i.pay==='Karta (plastik)' ? '<span class="tag k">KARTA</span>' : '');
   const subTxt = [
     i.sub ? esc(i.sub) : '',
+    (i.cur==='USD' && i.usd) ? ('$'+fmtUsd(i.usd)+' × '+fmt(i.kurs)) : '',
     i.qty ? (fmtQty(i.qty)+' '+esc(i.unit||'')) : '',
     (i.qty && i.amount) ? ('1 '+esc(i.unit||'birlik')+' = '+fmt(i.amount/i.qty)) : ''
   ].filter(Boolean).join(' · ');
@@ -543,8 +588,17 @@ function formHTML(it){
   </div>
 
   <div class="fg">
-    <label>Summasi (so'm)</label>
-    <input type="text" id="${p}amount" placeholder="0" inputmode="numeric" value="${v.amount?fmtInput(v.amount):''}">
+    <label>Valyuta</label>
+    <div class="seg" style="margin-bottom:0">
+      <button type="button" id="${p}cUZS" class="${v.cur!=='USD'?'on':''}" onclick="setCur('${p}','UZS')">So'm</button>
+      <button type="button" id="${p}cUSD" class="${v.cur==='USD'?'on':''}" onclick="setCur('${p}','USD')">Dollar $</button>
+    </div>
+    <input type="hidden" id="${p}cur" value="${v.cur==='USD'?'USD':'UZS'}">
+  </div>
+
+  <div class="fg">
+    <label id="${p}amountLabel">Summasi (so'm)</label>
+    <input type="text" id="${p}amount" placeholder="0" inputmode="numeric" value="${v.cur==='USD' ? (v.usd||'') : (v.amount?fmtInput(v.amount):'')}">
     <div class="hint big" id="${p}amountHint"></div>
   </div>
 
@@ -594,6 +648,17 @@ function dateWarn(p){
     w.innerHTML = '<span style="color:#7A4A1E;font-weight:700">⚠️ Sana bugungi emas: '+fmtDate(el.value)+'</span>';
   } else w.textContent='';
 }
+function setCur(p, c){
+  const h=document.getElementById(p+'cur'); if(!h) return;
+  const prev = h.value; h.value = c;
+  document.getElementById(p+'cUZS').classList.toggle('on', c==='UZS');
+  document.getElementById(p+'cUSD').classList.toggle('on', c==='USD');
+  const lbl=document.getElementById(p+'amountLabel');
+  if(lbl) lbl.textContent = (c==='USD') ? 'Summasi (dollar $)' : "Summasi (so'm)";
+  const amt=document.getElementById(p+'amount');
+  if(amt && prev!==c) amt.value='';
+  const f = window['__upd_'+p]; if(f) f();
+}
 function setKind(p, k){
   const h=document.getElementById(p+'kind'); if(h) h.value=k;
   const b=document.getElementById(p+'kb'), s=document.getElementById(p+'kp');
@@ -612,17 +677,31 @@ function bindForm(it){
   const subSel = document.getElementById(p+'subSel');
   if(subSel) subSel.onchange = ()=>refreshSubFree(p);
   const upd = ()=>{
-    amt.value = fmtInput(amt.value);
-    const a = parseAmount(amt.value);
+    const cur = document.getElementById(p+'cur').value;
+    let a;
+    if(cur==='USD'){
+      amt.value = String(amt.value).replace(/[^\d.,]/g,'').replace(',','.').replace(/(\..*)\./g,'$1');
+      const usd = parseFloat(amt.value) || 0;
+      a = KURS.rate>0 ? Math.round(usd*KURS.rate) : 0;
+    } else {
+      amt.value = fmtInput(amt.value);
+      a = parseAmount(amt.value);
+    }
     const q = parseFloat(qty && qty.value) || 0;
     const hint = document.getElementById(p+'amountHint');
-    let txt = a ? (fmt(a)+" so'm") : '';
+    let txt = '';
+    if(cur==='USD'){
+      const usd = parseFloat(amt.value)||0;
+      if(!(KURS.rate>0)) txt = '⚠️ Kurs kiritilmagan — Sozlamalardan yozing';
+      else if(usd) txt = '$'+fmtUsd(usd)+'  =  '+fmt(a)+" so'm   (kurs "+fmt(KURS.rate)+")";
+    } else if(a){ txt = fmt(a)+" so'm"; }
     if(a && q && document.getElementById(p+'qtyWrap').style.display!=='none'){
       const u = (document.getElementById(p+'qtyLabel').textContent.match(/\(([^)]+)\)/)||[])[1] || 'birlik';
       txt += '  ·  1 '+u+' = '+fmt(a/q)+" so'm";
     }
     hint.textContent = txt;
   };
+  window['__upd_'+p] = upd;
   amt.oninput = upd;
   if(qty) qty.oninput = upd;
   refreshSub(p, it);
@@ -717,10 +796,20 @@ function readForm(p){
   } else if(info.s==='erkin'){
     subN = free ? free.value.trim() : '';
   }
+  const cur = document.getElementById(p+'cur').value;
+  const raw = document.getElementById(p+'amount').value;
+  let amount, usd=null, kurs=null;
+  if(cur==='USD'){
+    usd = parseFloat(String(raw).replace(',','.')) || 0;
+    kurs = KURS.rate || 0;
+    amount = Math.round(usd * kurs);
+  } else {
+    amount = parseAmount(raw);
+  }
   return {
     date: document.getElementById(p+'date').value,
     cat, sub: subN, qty, unit,
-    amount: parseAmount(document.getElementById(p+'amount').value),
+    amount, cur, usd, kurs,
     pay: document.getElementById(p+'pay').value,
     kind: document.getElementById(p+'kind').value,
     note: document.getElementById(p+'note').value.trim(),
@@ -733,6 +822,8 @@ function validate(d){
   const y = dParts(d.date).y;
   if(y<2020 || y>new Date().getFullYear()+1){ toast('Sana xato: '+fmtDate(d.date),'err'); return false; }
   if(d.date > shiftDay(todayStr(), 1)){ toast('Kelajak sanasi kiritildi — tekshiring','err'); return false; }
+  if(d.cur==='USD' && !(KURS.rate>0)){ toast('Avval dollar kursini kiriting (Sozlamalar)','err'); return false; }
+  if(d.cur==='USD' && !(d.usd>0)){ toast('Dollar summasini kiriting','err'); return false; }
   if(!(d.amount>0)){ toast('Summani kiriting','err'); return false; }
   if(d.amount > 500000000){ toast('Summa juda katta — tekshiring','err'); return false; }
   return true;
@@ -845,11 +936,14 @@ function renderRep(){
   const app=document.getElementById('app');
   let html='';
   html += backupWarnHTML();
+  html += kursWarnHTML();
   html += `<div class="seg">
     <button class="${repMode==='oy'?'on':''}" onclick="repMode='oy'; renderRep();">Oylik</button>
     <button class="${repMode==='yil'?'on':''}" onclick="repMode='yil'; renderRep();">Yillik</button>
     <button class="${repMode==='qarz'?'on':''}" onclick="repMode='qarz'; renderRep();">Qarzlar</button>
+    <button class="${repMode==='kassa'?'on':''}" onclick="repMode='kassa'; renderRep();">Kassa</button>
   </div>`;
+  if(repMode==='kassa') html += repKassaHTML();
   if(repMode==='oy') html += repOyHTML();
   if(repMode==='yil') html += repYilHTML();
   if(repMode==='qarz') html += repQarzHTML();
@@ -874,6 +968,7 @@ function repOyHTML(){
   const bizSum = sum(all.filter(i=>i.kind==='biznes'));
   const perSum = sum(all.filter(i=>i.kind==='shaxsiy'));
   const debtSum = sum(all.filter(i=>i.pay==='Qarzga olindi' && !i.paid));
+  const usdSum = list.filter(i=>i.cur==='USD').reduce((s,i)=>s+(Number(i.usd)||0),0);
   const dim = daysInMonth(curMonth.y, curMonth.m);
   const isCur = (curMonth.y===new Date().getFullYear() && curMonth.m===new Date().getMonth()+1);
   const daysPassed = isCur ? new Date().getDate() : dim;
@@ -900,6 +995,7 @@ function repOyHTML(){
       <div class="chip"><div class="cl">Shaxsiy</div><div class="cv violet">${fmt(perSum)}</div></div>
       <div class="chip"><div class="cl">Kunlik o'rtacha</div><div class="cv">${fmt(avg)}</div></div>
       <div class="chip"><div class="cl">Shu oy qarzga olingan</div><div class="cv red">${fmt(debtSum)}</div></div>
+      ${usdSum ? `<div class="chip"><div class="cl">Dollarda xarajat</div><div class="cv green">$${fmtUsd(usdSum)}</div></div>` : ''}
     </div>
   </div>`;
 
@@ -960,6 +1056,21 @@ function repOyHTML(){
       </div>${inner}`;
   }).join('');
   html += `<div class="panel"><h2>Kategoriyalar bo'yicha</h2>${catHTML}</div>`;
+
+  /* to'lov usuli / valyuta analizi */
+  let _n=0,_k=0,_du=0,_q=0;
+  list.forEach(i=>{ const a=Number(i.amount)||0;
+    if(i.cur==='USD') _du+=(Number(i.usd)||0);
+    else if(i.pay==='Karta (plastik)'||i.pay==="O'tkazma (bank)") _k+=a;
+    else if(i.pay==='Qarzga olindi') _q+=a;
+    else _n+=a;
+  });
+  html += `<div class="panel"><h2>To'lov usuli bo'yicha (shu oy)</h2>
+    <div class="cat-row" style="cursor:default"><div style="flex:1">💵 Naqd so'm</div><span class="amt">${fmt(_n)}</span></div>
+    <div class="cat-row" style="cursor:default"><div style="flex:1">💳 Karta / o'tkazma</div><span class="amt">${fmt(_k)}</span></div>
+    <div class="cat-row" style="cursor:default"><div style="flex:1">💲 Dollar (naqd)</div><span class="amt">$${fmtUsd(_du)}</span></div>
+    <div class="cat-row" style="cursor:default"><div style="flex:1">📋 Qarzga olindi (shu oy)</div><span class="amt" style="color:var(--red)">${fmt(_q)}</span></div>
+  </div>`;
 
   /* eng katta 5 xarajat */
   const top = list.slice().sort((a,b)=>b.amount-a.amount).slice(0,5);
@@ -1152,18 +1263,22 @@ function repQarzHTML(){
 
 /* ==================== EXPORT: CSV ==================== */
 function csvRows(list){
-  const head = ["Sana","Vaqt","Kategoriya","Tafsilot","Miqdori","Birlik","Birlik narxi","Summa (so'm)","To'lov turi","Qarz holati","Yo'nalish","Yetkazib beruvchi","Zakaz №","Izoh"];
+  const head = ["Sana","Vaqt","Kategoriya","Tafsilot","Miqdori","Birlik","Birlik narxi","Summa (so'm)","Valyuta","Dollar ($)","Kurs","To'lov turi","Qarz holati","Yo'nalish","Yetkazib beruvchi","Zakaz №","Izoh"];
   const rows = list.slice().sort((a,b)=>String(a.date+a.time).localeCompare(String(b.date+b.time))).map(i=>[
     fmtDate(i.date), i.time||'', i.cat||'', i.sub||'',
     i.qty!=null?String(i.qty).replace('.',','):'', i.unit||'',
     (i.qty&&i.amount)?String(Math.round(i.amount/i.qty)):'',
     String(Math.round(Number(i.amount)||0)),
+    i.cur==='USD'?'Dollar':"So'm",
+    (i.cur==='USD'&&i.usd)?String(i.usd).replace('.',','):'',
+    (i.cur==='USD'&&i.kurs)?String(Math.round(i.kurs)):'',
     i.pay||'', (i.pay==='Qarzga olindi' ? (i.paid?"To'landi":"To'lanmagan") : ''),
     i.kind==='shaxsiy'?'Shaxsiy':'Biznes', i.supplier||'', i.order||'', i.note||''
   ]);
   const tot = sum(list);
-  rows.push(['','','','','','','','','','','','','','']);
-  rows.push(['JAMI','','','','','','',String(Math.round(tot)),'','','','','','']);
+  const totUsd = list.filter(i=>i.cur==='USD').reduce((s,i)=>s+(Number(i.usd)||0),0);
+  rows.push(['','','','','','','','','','','','','','','','','']);
+  rows.push(['JAMI','','','','','','',String(Math.round(tot)),'',totUsd?String(totUsd).replace('.',','):'','','','','','','','']);
   return [head].concat(rows);
 }
 function toCSV(rows){
@@ -1395,6 +1510,183 @@ function maybeAutoBackup(){
   gdSend(true);
 }
 
+/* ==================== KASSA (zakaz daftari bilan sinxron) ==================== */
+function readOrdersData(){
+  try{
+    const raw = localStorage.getItem('dormon_doors_v3');
+    if(!raw) return {ok:true, none:true, orders:[]};
+    const d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.orders)) return {ok:false, orders:[]};
+    return {ok:true, orders:d.orders};
+  }catch(e){ return {ok:false, orders:[]}; }
+}
+function kassaCalc(){
+  const ks = S.settings.kassa || {uzs:0,usd:0,karta:0,start:''};
+  const from = ks.start || '';
+  const R = readOrdersData();
+  let uzs=Number(ks.uzs)||0, usd=Number(ks.usd)||0, karta=Number(ks.karta)||0;
+  const inn=[], out=[];
+  if(R.ok) R.orders.forEach(o=>{
+    if(o.status==='Bekor qilindi') return;
+    (o.payments||[]).forEach(pm=>{
+      const d=pm.date||'';
+      if(from && d<from) return;
+      const rec={date:d, sum:Number(pm.sum)||0, cur:(pm.cur==='USD'?'USD':'UZS'), usd:Number(pm.usd)||0, method:pm.method||'Naqd', oid:o.id, name:(o.client&&o.client.name)||''};
+      inn.push(rec);
+      if(rec.cur==='USD') usd+=rec.usd;
+      else if(rec.method==='Karta'||rec.method==="O'tkazma") karta+=rec.sum;
+      else uzs+=rec.sum;
+    });
+  });
+  S.items.forEach(i=>{
+    if(from && i.date<from) return;
+    if(i.pay==='Qarzga olindi' && !i.paid) return;
+    const rec={date:i.date, sum:Number(i.amount)||0, cur:(i.cur==='USD'?'USD':'UZS'), usd:Number(i.usd)||0, pay:i.pay||'Naqd'};
+    out.push(rec);
+    if(rec.cur==='USD') usd-=rec.usd;
+    else if(rec.pay==='Karta (plastik)'||rec.pay==="O'tkazma (bank)") karta-=rec.sum;
+    else uzs-=rec.sum;
+  });
+  inn.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const hasStart = !!(from || ks.uzs || ks.usd || ks.karta);
+  return {ok:R.ok, uzs, usd, karta, inn, out, start:from, hasStart};
+}
+function kassaPanelHTML(){
+  const K=kassaCalc();
+  let w='';
+  if(!K.ok) w=`<div class="warn" style="background:#FDECEC;border-color:#c66;color:#7A2E2E">❗ <b>Zakaz daftari ma'lumotini o'qib bo'lmadi!</b> Kassadagi kirimlar hisobi to'liq emas. Ilovani yopib-ochib ko'ring; o'zgarmasa — xabar bering.</div>`;
+  const t=todayStr();
+  const tI=K.inn.filter(x=>x.date===t), tO=K.out.filter(x=>x.date===t);
+  const tIu=tI.filter(x=>x.cur!=='USD').reduce((a,x)=>a+x.sum,0), tId=tI.filter(x=>x.cur==='USD').reduce((a,x)=>a+x.usd,0);
+  const tOu=tO.filter(x=>x.cur!=='USD').reduce((a,x)=>a+x.sum,0), tOd=tO.filter(x=>x.cur==='USD').reduce((a,x)=>a+x.usd,0);
+  return w+`<div class="panel"><h2>💰 Kassa — hozirgi qoldiq</h2>
+    <div class="chips">
+      <div class="chip"><div class="cl">So'm (naqd)</div><div class="cv ${K.uzs<0?'red':''}">${fmt(K.uzs)}</div></div>
+      <div class="chip"><div class="cl">Dollar (naqd)</div><div class="cv ${K.usd<0?'red':'green'}">$${fmtUsd(K.usd)}</div></div>
+      <div class="chip"><div class="cl">Karta / o'tkazma</div><div class="cv ${K.karta<0?'red':''}">${fmt(K.karta)}</div></div>
+    </div>
+    <p class="note">Bugun: kirim <b style="color:var(--green)">+${fmt(tIu)}</b>${tId?(' +$'+fmtUsd(tId)):''} · chiqim <b style="color:var(--red)">−${fmt(tOu)}</b>${tOd?(' −$'+fmtUsd(tOd)):''}.
+    Kirim — zakaz daftaridagi to'lovlardan avtomatik.${K.hasStart?'':" <b style='color:#7A4A1E'>Boshlang'ich qoldiq kiritilmagan — Sozlamalar → Kassa.</b>"}</p>
+  </div>`;
+}
+function repKassaHTML(){
+  const K=kassaCalc();
+  const mk=curMonth.y+'-'+String(curMonth.m).padStart(2,'0');
+  const mI=K.inn.filter(x=>String(x.date).startsWith(mk));
+  const mO=K.out.filter(x=>String(x.date).startsWith(mk));
+  const f=(arr,fn)=>arr.filter(fn).reduce((a,x)=>a+x.sum,0);
+  const fu=(arr,fn)=>arr.filter(fn).reduce((a,x)=>a+x.usd,0);
+  const iN=f(mI,x=>x.cur!=='USD'&&!(x.method==='Karta'||x.method==="O'tkazma"));
+  const iK=f(mI,x=>x.cur!=='USD'&&(x.method==='Karta'||x.method==="O'tkazma"));
+  const iD=fu(mI,x=>x.cur==='USD');
+  const oN=f(mO,x=>x.cur!=='USD'&&!(x.pay==='Karta (plastik)'||x.pay==="O'tkazma (bank)"));
+  const oK=f(mO,x=>x.cur!=='USD'&&(x.pay==='Karta (plastik)'||x.pay==="O'tkazma (bank)"));
+  const oD=fu(mO,x=>x.cur==='USD');
+  let html=`<div class="panel"><div class="month-nav">
+      <button onclick="chMonth(-1)">‹</button>
+      <span class="month-label">${OYLAR[curMonth.m-1]} ${curMonth.y}</span>
+      <button onclick="chMonth(1)">›</button>
+    </div></div>`;
+  html+=kassaPanelHTML();
+  html+=`<div class="panel"><h2>${OYLAR[curMonth.m-1]} — kirim/chiqim analizi</h2>
+    <table class="rep-table">
+      <tr><th></th><th>Kirim (zakazdan)</th><th>Chiqim (xarajat)</th></tr>
+      <tr><td>💵 Naqd so'm</td><td>${iN?fmt(iN):''}</td><td>${oN?fmt(oN):''}</td></tr>
+      <tr><td>💳 Karta / o'tkazma</td><td>${iK?fmt(iK):''}</td><td>${oK?fmt(oK):''}</td></tr>
+      <tr><td>💲 Dollar</td><td>${iD?('$'+fmtUsd(iD)):''}</td><td>${oD?('$'+fmtUsd(oD)):''}</td></tr>
+      <tr class="total"><td>JAMI (so'mda)</td><td>${fmt(iN+iK)}</td><td>${fmt(oN+oK)}</td></tr>
+    </table>
+  </div>`;
+  html+=`<div class="panel"><h2>Zakazlardan kirimlar — ${OYLAR[curMonth.m-1]}</h2>
+    ${mI.length?mI.map(x=>`<div class="cat-row" style="cursor:default"><div style="flex:1">${fmtDate(x.date)} · №${x.oid}${x.name?(' · '+esc(x.name)):''} <span class="pct">${esc(x.method)}</span></div><span class="amt" style="color:var(--green)">+${x.cur==='USD'?('$'+fmtUsd(x.usd)):fmt(x.sum)}</span></div>`).join(''):`<div class="empty">Bu oyda zakazdan kirim yo'q</div>`}
+  </div>`;
+  return html;
+}
+function kassaSaqla(){
+  const st=S.settings;
+  st.kassa = {
+    uzs: parseAmount(document.getElementById('ksUzs').value),
+    usd: parseFloat(String(document.getElementById('ksUsd').value).replace(',','.'))||0,
+    karta: parseAmount(document.getElementById('ksKarta').value),
+    start: document.getElementById('ksDate').value || todayStr()
+  };
+  save(); toast('Kassa boshlang\'ich qoldig\'i saqlandi ✓','ok'); renderSet();
+}
+
+/* ==================== TANNARX (modellar) ==================== */
+function getModel(id){ return S.models.find(m=>m.id===id); }
+function renderCost(){
+  const app=document.getElementById('app');
+  let html='';
+  html+=`<div class="panel"><h2>Yangi model qo'shish</h2>
+    <div class="grid2">
+      <div class="fg"><label>Model nomi</label><input type="text" id="mNew" placeholder="masalan: Loft-3"></div>
+      <div class="fg"><label>Standart eshik kvadrati (kv.m)</label><input type="number" step="0.01" id="mKvm" placeholder="masalan: 1.6"></div>
+    </div>
+    <button class="btn" onclick="addModel()">+ Model ochish</button>
+    <p class="note" style="margin-top:8px">Bir marta kiritiladi: 1 dona (standart) eshikka ketadigan materiallar va narxlari. Tannarx doim shu yerda saqlanib turadi — yangi model chiqarilganda narx belgilashda taxmin qilinmaydi.</p>
+  </div>`;
+  if(!S.models.length) html+=`<div class="panel"><div class="empty">Hali model kiritilmagan.<br>Yuqoridan birinchi modelni oching.</div></div>`;
+  S.models.forEach(m=>{
+    const cost=m.mats.reduce((a,x)=>a+(Number(x.q)||0)*(Number(x.p)||0),0);
+    const kv=Number(m.kvm)||0, sell=Number(m.sell)||0;
+    html+=`<div class="panel">
+      <h2>${esc(m.name)} <button class="tchip" id="delM_${m.id}" onclick="delModel(${m.id})">✕ o'chirish</button></h2>
+      ${m.mats.length?`<table class="rep-table"><tr><th>Material</th><th>Miqdor</th><th>Narx</th><th>Summa</th><th></th></tr>
+        ${m.mats.map((x,xi)=>`<tr><td>${esc(x.n)}</td><td>${fmtQty(x.q)} ${esc(x.u)}</td><td>${fmt(x.p)}</td><td>${fmt((Number(x.q)||0)*(Number(x.p)||0))}</td><td><button class="del-btn" onclick="delMat(${m.id},${xi})">✕</button></td></tr>`).join('')}
+        <tr class="total"><td>TANNARX (1 dona)</td><td></td><td></td><td>${fmt(cost)}</td><td></td></tr></table>`
+      :`<p class="note">Material hali qo'shilmagan — pastdan qo'shing.</p>`}
+      <div class="chips" style="margin-top:10px">
+        <div class="chip"><div class="cl">1 dona tannarx</div><div class="cv">${fmt(cost)}</div></div>
+        ${kv>0?`<div class="chip"><div class="cl">1 kv.m tannarx (${fmtQty(kv)} kv.m)</div><div class="cv">${fmt(kv?cost/kv:0)}</div></div>`:''}
+        ${sell>0?`<div class="chip"><div class="cl">Foyda (sotish ${fmt(sell)})</div><div class="cv ${sell-cost>=0?'green':'red'}">${fmt(sell-cost)} · ${sell?Math.round((sell-cost)/sell*100):0}%</div></div>`:''}
+      </div>
+      <div class="grid3">
+        <div class="fg"><label>Material</label><select id="matSel_${m.id}">${MATERIALS.concat(FURNITURA).map(x=>`<option value="${esc(x[0])}|${esc(x[1])}">${esc(x[0])}</option>`).join('')}<option value="__free|dona">Boshqa (qo'lda)</option></select></div>
+        <div class="fg"><label>Miqdor</label><input type="number" step="0.01" id="matQ_${m.id}" placeholder="0"></div>
+        <div class="fg"><label>Birlik narxi</label><input type="text" inputmode="numeric" id="matP_${m.id}" placeholder="0"></div>
+      </div>
+      <div class="fg" id="matFreeW_${m.id}" style="display:none"><label>Material nomi</label><input type="text" id="matFree_${m.id}" placeholder="nomi"></div>
+      <div class="grid2">
+        <button class="btn secondary" onclick="addMat(${m.id})">+ Material qo'shish</button>
+        <div class="fg" style="margin:0"><label>Sotish narxi, 1 dona (ixtiyoriy)</label><input type="text" inputmode="numeric" value="${m.sell?fmtInput(m.sell):''}" oninput="this.value=fmtInput(this.value); upModel(${m.id},'sell',parseAmount(this.value));"></div>
+      </div>
+    </div>`;
+  });
+  app.innerHTML=html;
+  S.models.forEach(m=>{
+    const sel=document.getElementById('matSel_'+m.id);
+    if(sel) sel.onchange=()=>{ const w=document.getElementById('matFreeW_'+m.id); if(w) w.style.display = sel.value.indexOf('__free')===0?'block':'none'; };
+    const pp=document.getElementById('matP_'+m.id);
+    if(pp) pp.oninput=()=>{ pp.value=fmtInput(pp.value); };
+  });
+}
+function addModel(){
+  const n=(document.getElementById('mNew').value||'').trim();
+  if(!n){ toast('Model nomini yozing','err'); return; }
+  if(S.models.some(m=>m.name.toLowerCase()===n.toLowerCase())){ toast('Bunday model bor','err'); return; }
+  S.mseq=(S.mseq||0)+1;
+  S.models.push({id:S.mseq, name:n, kvm:parseFloat(document.getElementById('mKvm').value)||0, sell:0, mats:[]});
+  save(); renderCost(); toast('Model ochildi: '+n,'ok');
+}
+function upModel(id,f,v){ const m=getModel(id); if(!m)return; m[f]=v; save(); }
+function addMat(id){
+  const m=getModel(id); if(!m)return;
+  const selV=document.getElementById('matSel_'+id).value;
+  let parts=selV.split('|'), n=parts[0], u=parts[1]||'dona';
+  if(n==='__free'){ n=(document.getElementById('matFree_'+id).value||'').trim(); if(!n){ toast('Material nomini yozing','err'); return; } }
+  const q=parseFloat(document.getElementById('matQ_'+id).value)||0;
+  const pr=parseAmount(document.getElementById('matP_'+id).value);
+  if(!(q>0)){ toast('Miqdorni kiriting','err'); return; }
+  if(!(pr>0)){ toast('Narxni kiriting','err'); return; }
+  m.mats.push({n:n,u:u,q:q,p:pr}); save(); renderCost(); toast("Qo'shildi",'ok');
+}
+function delMat(id,xi){ const m=getModel(id); if(!m)return; m.mats.splice(xi,1); save(); renderCost(); }
+function delModel(id){
+  if(!confirmTwice('delM_'+id,'Rostdanmi?')) return;
+  S.models=S.models.filter(m=>m.id!==id); save(); renderCost(); toast("Model o'chirildi");
+}
+
 /* ==================== SOZLAMALAR ==================== */
 function renderSet(){
   const app=document.getElementById('app');
@@ -1427,6 +1719,28 @@ function renderSet(){
     <p class="note">Internet bo'lmasa — faylni Telegram «Saqlangan xabarlar»ga tashlang.</p>
   </div>`;
 
+  html += `<div class="panel"><h2>💰 Kassa — boshlang'ich qoldiq</h2>
+    <div class="fg"><label>Qaysi kundan boshlab hisoblansin</label><input type="date" id="ksDate" value="${esc(st.kassa.start||todayStr())}"></div>
+    <div class="grid3">
+      <div class="fg"><label>So'm (naqd)</label><input type="text" inputmode="numeric" id="ksUzs" value="${st.kassa.uzs?fmtInput(st.kassa.uzs):''}" oninput="this.value=fmtInput(this.value)"></div>
+      <div class="fg"><label>Dollar $</label><input type="number" step="0.01" id="ksUsd" value="${st.kassa.usd||''}"></div>
+      <div class="fg"><label>Karta</label><input type="text" inputmode="numeric" id="ksKarta" value="${st.kassa.karta?fmtInput(st.kassa.karta):''}" oninput="this.value=fmtInput(this.value)"></div>
+    </div>
+    <button class="btn" onclick="kassaSaqla()">💾 Kassani saqlash</button>
+    <p class="note" style="margin-top:8px">Masalan bugun kassada 10 000 000 so'm bo'lsa — shuni yozing. Shu kundan boshlab zakaz kirimlari va xarajatlar avtomatik qo'shilib-ayrilib boradi. Qarzga olingan (hali to'lanmagan) xarajat kassadan ayrilmaydi.</p>
+  </div>`;
+
+  const pd=pinGet();
+  html += `<div class="panel"><h2>🔒 PIN himoya</h2>
+    <p class="note" style="margin-bottom:8px">Holat: <b>${pd&&pd.pin?'yoqilgan ✓':"o'chirilgan"}</b> · PIN ikkala ilovaga (Zakaz + FINANS) birga amal qiladi.</p>
+    <div class="fg"><label>Yangi PIN (4–6 raqam)</label><input type="tel" id="pinNew" maxlength="6" placeholder="****"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="pinSet()">O'rnatish</button>
+      ${pd&&pd.pin?`<button class="btn danger" onclick="pinOff()">O'chirish</button>`:''}
+    </div>
+    <p class="note">PIN esdan chiqsa — qulf ekranidagi «PIN esimdan chiqdi» orqali Google Disk maxfiy so'zi bilan ochiladi.</p>
+  </div>`;
+
   html += `<div class="panel"><h2>👷 Ishchilar</h2>
     ${st.workers.map((w,idx)=>`<div class="cat-row" style="cursor:default"><span>${esc(w)}</span><button class="tchip" onclick="delWorker(${idx})">✕</button></div>`).join('')}
     <div class="grid2" style="margin-top:10px">
@@ -1443,6 +1757,16 @@ function renderSet(){
     </div>
   </div>`;
 
+  html += `<div class="panel"><h2>💵 Dollar kursi</h2>
+    <div class="fg"><label>Hamkorbank — <b>sotib olish</b> kursi (1 $ = ? so'm)</label>
+      <input type="text" id="kursInp" inputmode="numeric" placeholder="masalan: 12 700" value="${KURS.rate?fmtInput(KURS.rate):''}"></div>
+    <button class="btn" onclick="kursSaqla()">💾 Bugungi kursni saqlash</button>
+    <p class="note" style="margin-top:10px">
+      Oxirgi yangilangan: <b>${KURS.date?fmtDate(KURS.date):"hali yo'q"}</b>${KURS.rate?(' · 1 $ = '+fmt(KURS.rate)+" so'm"):''}
+      ${kursHolat()==='eski'?' — <span style="color:#7A4A1E;font-style:normal"><b>'+kursKunlar()+' kun oldin</b></span>':''}<br>
+      Kurs <b>ikkala ilova uchun umumiy</b> — zakaz daftarida ham shu ko'rinadi. Har zakazga o'sha kungi kurs muhrlanadi.
+    </p>
+  </div>`;
   html += `<div class="panel"><h2>📞 Kompaniya</h2>
     <div class="fg"><label>Telefon (PDFda chiqadi)</label>
       <input type="text" value="${esc(st.phone)}" oninput="S.settings.phone=this.value; save();"></div>
@@ -1453,6 +1777,15 @@ function renderSet(){
     Yozuvlar: ${S.items.length} ta${first?(' · birinchi yozuv: '+fmtDate(first)):''}<br>
     Saqlash: ${STORAGE_OK?'ishlayapti ✓':'ISHLAMAYAPTI — Safari orqali oching!'}</p>`;
   app.innerHTML=html;
+}
+function kursSaqla(){
+  const v = parseAmount(document.getElementById('kursInp').value);
+  if(!(v>0)){ toast('Kursni kiriting','err'); return; }
+  if(v<5000 || v>50000){ toast('Kurs shubhali: '+fmt(v)+' — tekshiring','err'); return; }
+  KURS.rate=v; KURS.date=todayStr(); KURS.src='Hamkorbank — sotib olish';
+  saveKurs();
+  toast("Kurs saqlandi: 1 $ = "+fmt(v)+" so'm",'ok');
+  renderSet();
 }
 function addWorker(){
   const el=document.getElementById('newWorker'); const v=el.value.trim();
@@ -1496,7 +1829,46 @@ function fileRestore(inp){
   rd.readAsText(f); inp.value='';
 }
 
+/* ==================== PIN HIMOYA (ikkala ilovaga umumiy) ==================== */
+const PIN_KEY='dormon_pin_v1';
+function pinGet(){ try{const r=localStorage.getItem(PIN_KEY); return r?JSON.parse(r):null;}catch(e){return null;} }
+function pinSet(){
+  const el=document.getElementById('pinNew'); const v=(el&&el.value||'').trim();
+  if(!/^\d{4,6}$/.test(v)){ toast("PIN 4–6 ta raqam bo'lsin",'err'); return; }
+  try{ localStorage.setItem(PIN_KEY, JSON.stringify({pin:v})); }catch(e){}
+  toast("PIN o'rnatildi ✓",'ok'); renderSet();
+}
+function pinOff(){ localStorage.removeItem(PIN_KEY); toast("PIN o'chirildi"); renderSet(); }
+function pinLock(){
+  const pd=pinGet(); if(!pd||!pd.pin) return;
+  if(document.getElementById('pinOv')) return;
+  const ov=document.createElement('div');
+  ov.id='pinOv';
+  ov.style.cssText='position:fixed;inset:0;background:#1F3864;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px';
+  ov.innerHTML='<div style="color:#E7B93C;font-family:Georgia,serif;font-size:22px;font-weight:700;letter-spacing:2px">DORMON DOORS</div>'+
+   '<div style="color:#C9D3E4;font-family:Arial,sans-serif;font-size:13px">PIN-kodni kiriting</div>'+
+   '<input id="pinInp" type="password" inputmode="numeric" maxlength="6" autocomplete="off" style="font-size:26px;text-align:center;letter-spacing:8px;width:190px;padding:12px;border-radius:10px;border:none;background:#FFF6D8">'+
+   '<div id="pinErr" style="color:#F0B0A0;font-family:Arial,sans-serif;font-size:12.5px;min-height:16px"></div>'+
+   '<button id="pinForgot" style="background:none;border:none;color:#9FB0CC;font-family:Arial,sans-serif;font-size:12.5px;text-decoration:underline;cursor:pointer">PIN esimdan chiqdi</button>';
+  document.body.appendChild(ov);
+  const inp=document.getElementById('pinInp');
+  setTimeout(function(){ try{inp.focus();}catch(e){} },150);
+  inp.addEventListener('input',function(){
+    const val=inp.value.replace(/\D/g,''); inp.value=val;
+    if(val===String(pd.pin)) ov.remove();
+    else if(val.length>=String(pd.pin).length){ document.getElementById('pinErr').textContent="Noto'g'ri PIN"; inp.value=''; }
+  });
+  document.getElementById('pinForgot').addEventListener('click',function(){
+    const w=prompt("Google Disk maxfiy so'zini kiriting:");
+    if(w===null) return;
+    const tok=(S.settings&&S.settings.gdToken)||'dormon2026';
+    if(String(w).trim()===String(tok)){ localStorage.removeItem(PIN_KEY); ov.remove(); toast("PIN o'chirildi"); }
+    else document.getElementById('pinErr').textContent="Maxfiy so'z xato";
+  });
+}
+
 /* ==================== START ==================== */
+pinLock();
 show('day');
 if(NEEDS_FIRST_SAVE && S.items.length){ save(); toast('Eski yozuvlar ko\'chirildi: '+S.items.length+' ta','ok'); }
 maybeAutoBackup();
