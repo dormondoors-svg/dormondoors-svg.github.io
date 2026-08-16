@@ -937,7 +937,8 @@ function renderSettings(){
       <button class="btn secondary" onclick="document.getElementById('impFile').click()">📥 Tiklash</button>
     </div>
     <input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="backupImport(this)">
-    <p class="note">Haftada bir marta zaxira nusxani Telegram'dagi «Saqlangan xabarlar»ga tashlab qo'ying — telefon yo'qolsa ham zakazlar tiklanadi. Tiklashda hozirgi hamma ma'lumot fayldagi bilan almashtiriladi.</p>
+    <p class="note">Haftada bir marta zaxira nusxani Telegram'dagi «Saqlangan xabarlar»ga tashlab qo'ying — telefon yo'qolsa ham zakazlar tiklanadi (bu fayl RASMLAR BILAN chiqadi). Tiklashda hozirgi hamma ma'lumot fayldagi bilan almashtiriladi.<br><br>
+☁️ <b>Google Disk avto-zaxira:</b> FINANS ilovasida Disk manzili kiritilgan bo'lsa, zakazlar matni ham HAR KUNI o'zi Diskka boradi (<b>dormon_zakaz_*.json</b>, rasmlarsiz). Oxirgi yuborilgan: <b>${(function(){try{const d=localStorage.getItem('dormon_zakaz_gdlast');return d?fmtDate(d):"hali yo'q";}catch(e){return '—';}})()}</b></p>
   </div>`;
   html+=`<p class="note" style="text-align:center">DORMON DOORS zakaz daftari · ${APP_VER}<br>Zakazlar: ${S.orders.length} ta · Saqlash: ${STORAGE_OK?'ishlayapti ✓':"ISHLAMAYAPTI — ilovani Safari orqali oching!"}</p>`;
   app.innerHTML=html;
@@ -1110,6 +1111,36 @@ async function makePDF(oid){
   }
 }
 
+/* =================== GOOGLE DISK AVTO-ZAXIRA (FINANS sozlamalaridan o'qiydi) =================== */
+function gdConf(){
+  try{
+    const x=JSON.parse(localStorage.getItem('dormon_xarajat_v2'));
+    if(x && x.settings && x.settings.gdUrl) return {url:String(x.settings.gdUrl).trim(), token:x.settings.gdToken||'dormon2026'};
+  }catch(e){}
+  return null;
+}
+async function gdZakazSend(){
+  const cf=gdConf(); if(!cf||!cf.url) return;
+  const name='dormon_zakaz_'+todayStr()+'.json';
+  const body=JSON.stringify({token:cf.token, name:name, data:JSON.stringify({app:'dormon-zakaz', ver:5, savedAt:todayStr(), state:S})});
+  try{
+    await fetch(cf.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,redirect:'follow'});
+    try{ localStorage.setItem('dormon_zakaz_gdlast', todayStr()); }catch(e){}
+  }catch(e){
+    try{
+      await fetch(cf.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body});
+      try{ localStorage.setItem('dormon_zakaz_gdlast', todayStr()); }catch(e2){}
+    }catch(e3){}
+  }
+}
+function maybeZakazBackup(){
+  try{
+    if(localStorage.getItem('dormon_zakaz_gdlast')===todayStr()) return;
+    if(!S.orders.length) return;
+    gdZakazSend();
+  }catch(e){}
+}
+
 /* =================== PIN HIMOYA (ikkala ilovaga umumiy) =================== */
 const PIN_KEY='dormon_pin_v1';
 function pinGet(){ try{const r=localStorage.getItem(PIN_KEY); return r?JSON.parse(r):null;}catch(e){return null;} }
@@ -1162,6 +1193,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
 /* =================== START =================== */
 pinLock();
 show('list');
+maybeZakazBackup();
 </script>
 </body>
 </html>
