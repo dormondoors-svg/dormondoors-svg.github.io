@@ -1,5 +1,5 @@
 /* Dormon Doors — offline service worker (zakaz daftari + xarajatlar) */
-const CACHE = 'dormon-doors-v4-6';
+const CACHE = 'dormon-doors-v4-8';
 const ASSETS = [
   './',
   './index.html',

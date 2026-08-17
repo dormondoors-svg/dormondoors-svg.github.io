@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Dormon Doors — Zakaz daftari</title>
+<title>Blaknot — Zakaz va Finans</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dormon Doors">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -133,6 +133,9 @@
   }
   .bottom-nav button .ic{ display:block; font-size:20px; margin-bottom:2px; }
   .bottom-nav button.active{ color:var(--gold); }
+  /* FINANS iframe */
+  .fin-wrap{ position:fixed; left:0; right:0; top:0; display:none; z-index:15; background:#EFEBE2; }
+  .fin-wrap iframe{ width:100%; height:100%; border:none; display:block; }
   .toast{
     position:fixed; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
     background:var(--navy-dark); color:#fff; padding:10px 18px; border-radius:8px;
@@ -185,9 +188,11 @@
   </div>
 </header>
 <div class="wrap" id="app"></div>
+<div class="fin-wrap" id="finWrap"><iframe id="finFrame" title="FINANS"></iframe></div>
 <nav class="bottom-nav" id="bottomNav">
   <button id="nav_list" onclick="show('list')"><span class="ic">📋</span>Zakazlar</button>
   <button id="nav_report" onclick="show('report')"><span class="ic">📊</span>Hisobot</button>
+  <button id="nav_finans" onclick="show('finans')"><span class="ic">💰</span>Finans</button>
   <button id="nav_settings" onclick="show('settings')"><span class="ic">⚙️</span>Sozlamalar</button>
 </nav>
 <div class="toast" id="toast"></div>
@@ -195,7 +200,7 @@
 <script>
 /* =================== HOLAT (STATE) =================== */
 const KEY = 'dormon_doors_v3';
-const APP_VER = 'v3.2 — 02.08.2026';
+const APP_VER = 'v5.5 — 17.08.2026';
 const STATUSES = ['Kelishuv','Avans olindi','Ishlab chiqarilmoqda',"O'rnatildi",'Yakunlandi','Bekor qilindi'];
 const ST_COLORS = {
   'Kelishuv':'#8A8474','Avans olindi':'#2A5B8A','Ishlab chiqarilmoqda':'#BF9000',
@@ -401,10 +406,26 @@ function show(v, param){
   if(v==='order') currentOrderId=param;
   const back=document.getElementById('backBtn');
   back.style.display = (v==='order') ? 'block' : 'none';
-  ['list','report','settings'].forEach(n=>{
+  ['list','report','finans','settings'].forEach(n=>{
     const b=document.getElementById('nav_'+n);
     if(b) b.classList.toggle('active', v===n);
   });
+  /* FINANS — ichki bo'lim (iframe, bir ombor) */
+  const fin=(v==='finans');
+  const fw=document.getElementById('finWrap');
+  document.getElementById('hdr').style.display = fin?'none':'';
+  document.getElementById('app').style.display = fin?'none':'';
+  if(fw){
+    fw.style.display = fin?'block':'none';
+    if(fin){
+      const nav=document.getElementById('bottomNav');
+      fw.style.bottom = (nav?nav.offsetHeight:56)+'px';
+      const f=document.getElementById('finFrame');
+      if(!f.getAttribute('src')) f.setAttribute('src','xarajat.html');
+      else { try{ f.contentWindow.postMessage('dd-refresh','*'); }catch(e){} }
+      return;
+    }
+  }
   const hT=document.getElementById('hTitle'), hS=document.getElementById('hSub');
   if(v==='list'){ hT.textContent='DORMON DOORS'; hS.textContent='MDF eshik — zakazlar va hisob-kitob'; renderList(); }
   if(v==='order'){ const o=getOrder(currentOrderId); hT.textContent='Zakaz №'+(o?o.id:''); hS.textContent=o?(o.client.name||'Mijoz kiritilmagan'):''; renderOrder(); }

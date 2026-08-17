@@ -229,8 +229,9 @@
 <script>
 /* ==================== KONSTANTALAR ==================== */
 const KEY = 'dormon_xarajat_v2';
+const EMBED = (window.self !== window.top); /* Zakaz daftari ichida ochilgan */
 const OLD_KEY = 'dormon_doris_expenses';
-const APP_VER = 'v2.0 — 14.08.2026';
+const APP_VER = 'v5.5 — 17.08.2026';
 const DEFAULT_PHONE = '+998 91 488 70 47, +998 94 094 07 00';
 const OYLAR = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
 const OY_QISQA = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
@@ -261,7 +262,9 @@ const MATERIALS = [
   ["Kraska — bo'yoq",'kg'],['Gruntovka','kg'],['Rastvoritel','kg'],['Otverditel','kg'],
   ['Kley — yelim','kg'],["Jilvir — shlif qog'ozi",'metr'],["Plyonka / shpon",'metr'],
   ["To'ldirgich (penopolistirol)",'dona'],['Montaj kopigi (pena)','dona'],['Germetik','dona'],
-  ['Skotch / lenta','dona'],['Shurup / mix','quti'],['Boshqa material','dona']
+  ['Skotch / lenta','dona'],['Shurup / mix','quti'],
+  ['Zamok (qulf)','dona'],['Petlya','dona'],['Shpingalet','dona'],['Rezinka — uplotnitel','metr'],
+  ['Boshqa material','dona']
 ];
 const FURNITURA = [
   ['Petlya','dona'],['Dastak','dona'],['Qulf','dona'],['Shpingalet','dona'],
@@ -352,6 +355,10 @@ if(!S.settings.kassa) S.settings.kassa = { uzs:0, usd:0, karta:0, start:'' };
 if(!Array.isArray(S.models)) S.models = [];
 if(!S.mseq) S.mseq = S.models.reduce((m,x)=>Math.max(m, Number(x.id)||0), 0);
 if(!S.seq) S.seq = S.items.reduce((m,i)=>Math.max(m, Number(i.id)||0), 0);
+if(!Array.isArray(S.exch)) S.exch = [];        /* dollar→so'm ayirboshlashlar */
+if(!S.xseq) S.xseq = S.exch.reduce((m,e)=>Math.max(m, Number(e.id)||0), 0);
+if(!Array.isArray(S.oldDebts)) S.oldDebts = []; /* eski (ilovadan oldingi) qarzlar */
+if(!S.odseq) S.odseq = S.oldDebts.reduce((m,e)=>Math.max(m, Number(e.id)||0), 0);
 S.items.forEach(i=>{
   if(!i.kind) i.kind = 'biznes';
   if(!i.pay) i.pay = 'Naqd';
@@ -1236,13 +1243,73 @@ function repYilHTML(){
   html += `<div class="btn-row"><button class="btn secondary" onclick="exportCSV('yil')">📊 ${repYear} — Excel (CSV)</button></div>`;
   return html;
 }
+function oldDebtPanelHTML(){
+  const list=(S.oldDebts||[]).slice().sort((a,b)=>(a.paid?1:0)-(b.paid?1:0) || String(a.date).localeCompare(String(b.date)));
+  const unpaid=list.filter(o=>!o.paid), paid=list.filter(o=>o.paid);
+  let html=`<div class="panel"><h2>📜 Eski qarzlar (ilovadan oldingi)</h2>
+    <p class="note" style="margin-bottom:8px">Ilovani boshlashdan oldin qolgan qarzlar shu yerga qo'lda kiritiladi. Bu yozuvlar kassaga TA'SIR QILMAYDI — faqat ro'yxat va nazorat uchun.</p>
+    <div class="grid2">
+      <div class="fg"><label>Kimga / kimdan</label><input type="text" id="odName" placeholder="masalan: MDF do'koni"></div>
+      <div class="fg"><label>Summa (so'm)</label><input type="text" id="odAmt" inputmode="numeric" placeholder="0"></div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>Sana (taxminiy bo'lsa ham)</label><input type="date" id="odDate" value="${todayStr()}"></div>
+      <div class="fg"><label>Izoh</label><input type="text" id="odNote" placeholder="nima uchun"></div>
+    </div>
+    <button class="btn full" onclick="odAdd()">+ Eski qarz qo'shish</button>`;
+  if(unpaid.length){
+    html+=`<div style="margin-top:12px">`+unpaid.map(o=>`<div class="cat-row" style="cursor:default">
+      <div style="flex:1"><b>${esc(o.name)}</b><br><span style="font-size:11.5px;color:var(--muted)">${fmtDate(o.date)}${o.note?(' · '+esc(o.note)):''}</span></div>
+      <span class="amt" style="color:var(--red)">${fmt(o.amount)}</span>
+      <button class="tchip" style="margin-left:8px" onclick="odPay(${o.id})">To'landi</button>
+      <button class="tchip" style="margin-left:4px" onclick="odDel(${o.id})">✕</button>
+    </div>`).join('')+`</div>`;
+  } else html+=`<div class="empty" style="margin-top:10px">To'lanmagan eski qarz yo'q 🎉</div>`;
+  if(paid.length){
+    html+=`<details style="margin-top:10px"><summary style="font-family:Arial,sans-serif;font-size:12.5px;color:var(--muted);cursor:pointer">To'langan eski qarzlar (${paid.length} ta)</summary>`
+      +paid.map(o=>`<div class="cat-row" style="cursor:default;opacity:.65">
+      <div style="flex:1"><s>${esc(o.name)}</s> <span style="font-size:11.5px;color:var(--muted)">${fmtDate(o.paidDate||o.date)} to'landi</span></div>
+      <span class="amt">${fmt(o.amount)}</span>
+      <button class="tchip" style="margin-left:8px" onclick="odUnpay(${o.id})">Qaytarish</button>
+    </div>`).join('')+`</details>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+function odAdd(){
+  const n=(document.getElementById('odName').value||'').trim();
+  const a=parseAmount(document.getElementById('odAmt').value);
+  const d=document.getElementById('odDate').value||todayStr();
+  const iz=(document.getElementById('odNote').value||'').trim();
+  if(!n){ toast('Kimga qarz ekanini yozing','err'); return; }
+  if(!(a>0)){ toast('Summani kiriting','err'); return; }
+  S.odseq=(S.odseq||0)+1;
+  S.oldDebts.push({id:S.odseq, name:n, amount:a, date:d, note:iz, paid:false, paidDate:''});
+  save(); toast('Eski qarz qo\'shildi','ok'); renderRep();
+}
+function odPay(id){
+  const o=S.oldDebts.find(x=>x.id===id); if(!o) return;
+  if(!confirm(esc(o.name)+' — '+fmt(o.amount)+' so\'m to\'landi deb belgilansinmi?\n(Kassaga ta\'sir qilmaydi. Pul kassadan chiqqan bo\'lsa — Kunlik xarajatga alohida yozing.)')) return;
+  o.paid=true; o.paidDate=todayStr(); save(); renderRep(); toast('To\'landi ✓','ok');
+}
+function odUnpay(id){
+  const o=S.oldDebts.find(x=>x.id===id); if(!o) return;
+  o.paid=false; o.paidDate=''; save(); renderRep();
+}
+function odDel(id){
+  if(!confirm('Bu eski qarz yozuvi butunlay o\'chirilsinmi?')) return;
+  S.oldDebts=S.oldDebts.filter(x=>x.id!==id); save(); renderRep(); toast('O\'chirildi');
+}
 function repQarzHTML(){
   const d = debtItems().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
   const total = sum(d);
+  const odUnpaid = (S.oldDebts||[]).filter(o=>!o.paid);
+  const odTotal = odUnpaid.reduce((a,o)=>a+(Number(o.amount)||0),0);
   const bySup = {};
   d.forEach(i=>{ const k=i.supplier||'Kimdan — yozilmagan'; bySup[k]=(bySup[k]||0)+(Number(i.amount)||0); });
-  let html = `<div class="total-box"><div class="label">To'lanmagan qarz (jami)</div><div class="value">${fmt(total)} so'm</div><div class="sub">${d.length} ta yozuv</div></div>`;
-  if(!d.length) return html + `<div class="panel"><div class="empty">To'lanmagan qarz yo'q 🎉</div></div>`;
+  let html = `<div class="total-box"><div class="label">To'lanmagan qarz (jami)</div><div class="value">${fmt(total+odTotal)} so'm</div><div class="sub">Xarajatdan: ${fmt(total)} · Eski qarz: ${fmt(odTotal)}</div></div>`;
+  html += oldDebtPanelHTML();
+  if(!d.length) return html + `<div class="panel"><div class="empty">Xarajatlardan to'lanmagan qarz yo'q 🎉</div></div>`;
   html += `<div class="panel"><h2>Kimga qarzdormiz</h2>
     ${Object.keys(bySup).sort((a,b)=>bySup[b]-bySup[a]).map(k=>
       `<div class="cat-row" style="cursor:default"><span>${esc(k)}</span><span class="amt" style="color:var(--red)">${fmt(bySup[k])}</span></div>`).join('')}
@@ -1277,6 +1344,7 @@ function claudeReportText(){
   const top=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]).slice(0,5)
     .map((c,ix)=>(ix+1)+') '+c+' — '+fmt(byCat[c])).join('; ');
   const dbt=debtItems(); const dbtSum=sum(dbt);
+  const odSum=(S.oldDebts||[]).filter(o=>!o.paid).reduce((a,o)=>a+(Number(o.amount)||0),0);
   const mk=curMonth.y+'-'+String(curMonth.m).padStart(2,'0');
   const mI=K.inn.filter(x=>String(x.date).startsWith(mk));
   const iN=mI.filter(x=>x.cur!=='USD'&&!(x.method==='Karta'||x.method==="O'tkazma")).reduce((a,x)=>a+x.sum,0);
@@ -1586,14 +1654,23 @@ function kassaCalc(){
     else if(rec.pay==='Karta (plastik)'||rec.pay==="O'tkazma (bank)") karta-=rec.sum;
     else uzs-=rec.sum;
   });
+  const exch=[];
+  (S.exch||[]).forEach(e=>{
+    if(from && e.date<from) return;
+    const rec={id:e.id, date:e.date, usd:Number(e.usd)||0, kurs:Number(e.kurs)||0, sum:Number(e.sum)||0};
+    exch.push(rec);
+    usd -= rec.usd; uzs += rec.sum;
+  });
+  exch.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   inn.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   const hasStart = !!(from || ks.uzs || ks.usd || ks.karta);
-  return {ok:R.ok, uzs, usd, karta, inn, out, start:from, hasStart};
+  return {ok:R.ok, none:!!R.none, uzs, usd, karta, inn, out, exch, start:from, hasStart};
 }
 function kassaPanelHTML(){
   const K=kassaCalc();
   let w='';
   if(!K.ok) w=`<div class="warn" style="background:#FDECEC;border-color:#c66;color:#7A2E2E">❗ <b>Zakaz daftari ma'lumotini o'qib bo'lmadi!</b> Kassadagi kirimlar hisobi to'liq emas. Ilovani yopib-ochib ko'ring; o'zgarmasa — xabar bering.</div>`;
+  else if(K.none && !EMBED) w=`<div class="warn" style="background:#FDECEC;border-color:#c66;color:#7A2E2E">❗ <b>Zakaz daftari ma'lumoti BU qurilmada topilmadi.</b> Zakazdan kirimlar kassaga qo'shilmaydi. FINANSni Zakaz daftari ilovasi ichidagi «💰 Finans» bo'limi orqali oching — shunda kassa avtomatik ishlaydi.</div>`;
   const t=todayStr();
   const tI=K.inn.filter(x=>x.date===t), tO=K.out.filter(x=>x.date===t);
   const tIu=tI.filter(x=>x.cur!=='USD').reduce((a,x)=>a+x.sum,0), tId=tI.filter(x=>x.cur==='USD').reduce((a,x)=>a+x.usd,0);
@@ -1627,6 +1704,7 @@ function repKassaHTML(){
       <button onclick="chMonth(1)">›</button>
     </div></div>`;
   html+=kassaPanelHTML();
+  html+=exchPanelHTML();
   html+=`<div class="panel"><h2>${OYLAR[curMonth.m-1]} — kirim/chiqim analizi</h2>
     <table class="rep-table">
       <tr><th></th><th>Kirim (zakazdan)</th><th>Chiqim (xarajat)</th></tr>
@@ -1641,6 +1719,54 @@ function repKassaHTML(){
   </div>`;
   return html;
 }
+function exchPanelHTML(){
+  const K=kassaCalc();
+  const list=(K.exch||[]);
+  const kursDef = (KURS && KURS.rate>0) ? KURS.rate : '';
+  let html=`<div class="panel"><h2>💱 Dollar → so'm ayirboshlash</h2>
+    <p class="note" style="margin-bottom:8px">Dollar kassadan naqd so'm kassaga o'tkazish. Kassa avtomatik: −$ va +so'm.</p>
+    <div class="grid2">
+      <div class="fg"><label>Dollar miqdori ($)</label><input type="text" id="exUsd" inputmode="decimal" placeholder="masalan: 100" oninput="exCalc()"></div>
+      <div class="fg"><label>Kurs (1$ = so'm)</label><input type="text" id="exKurs" inputmode="numeric" value="${kursDef}" oninput="exCalc()"></div>
+    </div>
+    <div class="fg"><label>Sana</label><input type="date" id="exDate" value="${todayStr()}"></div>
+    <div class="fg"><span class="note" id="exHint"></span></div>
+    <button class="btn full" onclick="exAdd()">💱 Ayirboshlash</button>`;
+  if(list.length){
+    html+=`<div style="margin-top:12px">`+list.map(e=>`<div class="cat-row" style="cursor:default">
+      <div style="flex:1">${fmtDate(e.date)} · $${fmtUsd(e.usd)} × ${fmt(e.kurs)}</div>
+      <span class="amt" style="color:var(--green)">+${fmt(e.sum)}</span>
+      <button class="tchip" style="margin-left:8px" onclick="exDel(${e.id})">✕</button>
+    </div>`).join('')+`</div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+function exCalc(){
+  const u=parseFloat(String((document.getElementById('exUsd')||{}).value).replace(',','.'))||0;
+  const k=parseAmount((document.getElementById('exKurs')||{}).value);
+  const h=document.getElementById('exHint'); if(!h) return;
+  h.innerHTML = (u>0&&k>0) ? ('So\'m kassaga tushadi: <b>'+fmt(Math.round(u*k))+' so\'m</b>') : '';
+}
+function exAdd(){
+  const u=parseFloat(String(document.getElementById('exUsd').value).replace(',','.'))||0;
+  const k=parseAmount(document.getElementById('exKurs').value);
+  const d=document.getElementById('exDate').value||todayStr();
+  if(!(u>0)){ toast('Dollar miqdorini kiriting','err'); return; }
+  if(!(k>0)){ toast('Kursni kiriting','err'); return; }
+  const K=kassaCalc();
+  if(u > K.usd + 0.001){
+    if(!confirm('Diqqat: dollar kassada $'+fmtUsd(K.usd)+' bor, siz $'+fmtUsd(u)+' ayirboshlayapsiz. Davom etilsinmi?')) return;
+  }
+  S.xseq=(S.xseq||0)+1;
+  S.exch.push({id:S.xseq, date:d, usd:u, kurs:k, sum:Math.round(u*k)});
+  save(); toast('Ayirboshlandi: −$'+fmtUsd(u)+' → +'+fmt(Math.round(u*k))+' so\'m','ok');
+  renderRep();
+}
+function exDel(id){
+  if(!confirm('Bu ayirboshlash yozuvi o\'chirilsinmi? Kassa qayta hisoblanadi.')) return;
+  S.exch=S.exch.filter(e=>e.id!==id); save(); renderRep(); toast('O\'chirildi');
+}
 function kassaSaqla(){
   const st=S.settings;
   st.kassa = {
@@ -1654,6 +1780,11 @@ function kassaSaqla(){
 
 /* ==================== TANNARX (modellar) ==================== */
 function getModel(id){ return S.models.find(m=>m.id===id); }
+function matOptions(){
+  const seen={}, out=[];
+  MATERIALS.concat(FURNITURA).forEach(p=>{ if(!seen[p[0]]){ seen[p[0]]=1; out.push(p); } });
+  return out.map(p=>`<option value="${esc(p[0])}|${esc(p[1])}">${esc(p[0])}</option>`).join('');
+}
 function renderCost(){
   const app=document.getElementById('app');
   let html='';
@@ -1681,7 +1812,7 @@ function renderCost(){
         ${sell>0?`<div class="chip"><div class="cl">Foyda (sotish ${fmt(sell)})</div><div class="cv ${sell-cost>=0?'green':'red'}">${fmt(sell-cost)} · ${sell?Math.round((sell-cost)/sell*100):0}%</div></div>`:''}
       </div>
       <div class="grid3">
-        <div class="fg"><label>Material</label><select id="matSel_${m.id}">${MATERIALS.concat(FURNITURA).map(x=>`<option value="${esc(x[0])}|${esc(x[1])}">${esc(x[0])}</option>`).join('')}<option value="__free|dona">Boshqa (qo'lda)</option></select></div>
+        <div class="fg"><label>Material</label><select id="matSel_${m.id}">${matOptions()}<option value="__free|dona">Boshqa (qo'lda)</option></select></div>
         <div class="fg"><label>Miqdor</label><input type="number" step="0.01" id="matQ_${m.id}" placeholder="0"></div>
         <div class="fg"><label>Birlik narxi</label><input type="text" inputmode="numeric" id="matP_${m.id}" placeholder="0"></div>
       </div>
@@ -1907,7 +2038,10 @@ function pinLock(){
 }
 
 /* ==================== START ==================== */
-pinLock();
+if(!EMBED) pinLock(); /* embed'da PINni tashqi ilova so'raydi */
+window.addEventListener('message', function(ev){
+  if(ev && ev.data==='dd-refresh'){ try{ show(view||'day'); }catch(e){} }
+});
 show('day');
 if(NEEDS_FIRST_SAVE && S.items.length){ save(); toast('Eski yozuvlar ko\'chirildi: '+S.items.length+' ta','ok'); }
 maybeAutoBackup();
